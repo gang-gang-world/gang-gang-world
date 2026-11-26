@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ギャンギャンワールド</title>
+<style>
+body {
+  background: #101018;
+  color: white;
+  font-family: sans-serif;
+  text-align: center;
+  padding: 25px;
+}
+h1 { color: gold; }
+section {
+  background: #222230;
+  padding: 20px;
+  border-radius: 15px;
+}
+</style>
+</head>
+<body>
+<h1>ギャンギャンワールド</h1>
+<p>公式ボートレースゲーム</p>
+<section>
+<h2>レース情報</h2>
+<p id="status">接続確認中...</p>
+</section>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyBhYaW-hDQcCL6sc8WNqz5glK1xZOJ-YL8",
+  authDomain: "gang-gang-world.firebaseapp.com",
+  projectId: "gang-gang-world",
+  appId: "1:546523018840:web:8ca419709eff43f0d83c2d"
+});
+
+const db = getFirestore(app);
+try {
+  const race = await getDoc(doc(db, "races", "race1"));
+  document.getElementById("status").textContent =
+    race.exists() ? "接続成功！ " + race.data().name : "レース未登録";
+} catch (e) {
+  document.getElementById("status").textContent =
+    "接続エラー：" + e.code;
+}
+</script>
+</body>
+</html>

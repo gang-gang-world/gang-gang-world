@@ -10,26 +10,93 @@ body {
   color: white;
   font-family: sans-serif;
   text-align: center;
-  padding: 25px;
+  padding: 15px;
 }
-h1 { color: gold; }
+h1 { color: gold; font-size: 28px; }
 section {
   background: #222230;
   padding: 20px;
   border-radius: 15px;
+  margin-bottom: 15px;
+}
+input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 13px;
+  margin: 6px 0;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+}
+button {
+  width: 100%;
+  padding: 13px;
+  margin: 6px 0;
+  border: none;
+  border-radius: 8px;
+  background: gold;
+  color: black;
+  font-weight: bold;
+  font-size: 16px;
+}
+#points {
+  color: gold;
+  font-size: 26px;
+}
+#message {
+  overflow-wrap: anywhere;
+}
+[hidden] {
+  display: none !important;
 }
 </style>
 </head>
 <body>
+
 <h1>ギャンギャンワールド</h1>
 <p>公式ボートレースゲーム</p>
+
+<section id="loginArea">
+<h2>ログイン・新規登録</h2>
+<input id="email" type="email" placeholder="メールアドレス">
+<input id="password" type="password" placeholder="パスワード（6文字以上）">
+<button id="login">ログイン</button>
+<button id="register">新規登録</button>
+<p id="message"></p>
+</section>
+
+<section id="userArea" hidden>
+<h2>マイページ</h2>
+<p id="userName"></p>
+<p id="role"></p>
+<p>所持ポイント</p>
+<p id="points">未設定</p>
+<button id="logout">ログアウト</button>
+</section>
+
 <section>
 <h2>レース情報</h2>
 <p id="status">接続確認中...</p>
 </section>
+
+<section id="adminArea" hidden>
+<h2>管理者メニュー</h2>
+<p>管理者としてログイン中</p>
+<p>レース管理機能は準備中</p>
+</section>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
+
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyBhYaW-hDQcCL6sc8WNqz5glK1xZOJ-YL8",
@@ -39,13 +106,75 @@ const app = initializeApp({
 });
 
 const db = getFirestore(app);
+const auth = getAuth(app);
+
+const adminUID = "w3ZZn1g16fT9wfep9rkMzt7VrPt2";
+
+const el = id => document.getElementById(id);
+
+function showError(e) {
+  const errors = {
+    "auth/email-already-in-use": "このメールアドレスは登録済みです。",
+    "auth/invalid-email": "メールアドレスを確認してください。",
+    "auth/weak-password": "パスワードは6文字以上にしてください。",
+    "auth/invalid-credential": "メールアドレスかパスワードが違います。"
+  };
+  el("message").textContent =
+    errors[e.code] || "エラー：" + e.code;
+}
+
+el("register").onclick = async () => {
+  try {
+    await createUserWithEmailAndPassword(
+      auth,
+      el("email").value.trim(),
+      el("password").value
+    );
+  } catch(e) {
+    showError(e);
+  }
+};
+
+el("login").onclick = async () => {
+  try {
+    await signInWithEmailAndPassword(
+      auth,
+      el("email").value.trim(),
+      el("password").value
+    );
+  } catch(e) {
+    showError(e);
+  }
+};
+
+el("logout").onclick = async () => {
+  await signOut(auth);
+};
+
+onAuthStateChanged(auth, user => {
+  el("loginArea").hidden = !!user;
+  el("userArea").hidden = !user;
+  el("adminArea").hidden = !user || user.uid !== adminUID;
+  el("message").textContent = "";
+
+  if(user) {
+    el("userName").textContent = user.email;
+    el("role").textContent =
+      user.uid === adminUID ? "管理者" : "一般参加者";
+    el("password").value = "";
+  }
+});
+
 try {
-  const race = await getDoc(doc(db, "races", "race1"));
-  document.getElementById("status").textContent =
-    race.exists() ? "接続成功！ " + race.data().name : "レース未登録";
-} catch (e) {
-  document.getElementById("status").textContent =
-    "接続エラー：" + e.code;
+  let race = await getDoc(doc(db, "races", "current"));
+  if (!race.exists()) {
+    race = await getDoc(doc(db, "races", "race1"));
+  }
+  el("status").textContent = race.exists()
+    ? race.data().status || race.data().name || "接続成功！"
+    : "レース未登録";
+} catch(e) {
+  el("status").textContent = "接続エラー：" + e.code;
 }
 </script>
 </body>

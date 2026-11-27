@@ -1500,5 +1500,67 @@ updateNavigation();
 
   show("home");
 })();
+</script><script>
+(() => {
+  const home = document.getElementById("userArea");
+
+  const panel = document.createElement("div");
+  panel.id = "transferPanel";
+
+  panel.style.cssText = `
+    margin-top:16px;
+    padding:15px;
+    background:#0d1420;
+    border:1px solid #8a713d;
+    border-radius:14px;
+  `;
+
+  panel.innerHTML = `
+    <h3>💸 ポイント譲渡</h3>
+
+    <p>あなたのプレイヤーID</p>
+
+    <input id="myTransferID" readonly>
+
+    <button id="copyTransferID">
+      IDをコピー
+    </button>
+
+    <p>送信相手のID</p>
+
+    <input id="transferTo"
+      placeholder="相手のプレイヤーID">
+
+    <p>譲渡ポイント</p>
+
+    <input id="transferAmount"
+      type="number"
+      min="100"
+      step="100"
+      placeholder="1000">
+
+    <button id="sendTransfer" disabled>
+      ポイントを送る
+    </button>
+
+    <p id="transferMessage">
+      準備中
+    </p>
+
+    <small>
+      手数料無料・最低100pt・換金不可
+    </small>
+
+    <hr>
+
+    <h3>譲渡履歴</h3>
+
+    <div id="transferHistory">
+      準備中
+    </div>
+  `;
+
+  home.append(panel);
+})();
 </script></body>
 </html>

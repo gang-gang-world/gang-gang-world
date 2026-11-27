@@ -1562,5 +1562,34 @@ updateNavigation();
 
   home.append(panel);
 })();
+</script><script type="module">
+import { getAuth, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+const auth = getAuth();
+
+onAuthStateChanged(auth, user => {
+  document.getElementById("myTransferID").value =
+    user ? user.uid : "";
+
+  document.getElementById("transferMessage").textContent =
+    user ? "プレイヤーID取得完了" : "ログインしてください";
+});
+
+document.getElementById("copyTransferID").onclick =
+async () => {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  try {
+    await navigator.clipboard.writeText(user.uid);
+
+    alert("プレイヤーIDをコピーしました！");
+  } catch (e) {
+    const input = document.getElementById("myTransferID");
+    input.select();
+    alert("IDを選択しました。手動でコピーしてください。");
+  }
+};
 </script></body>
 </html>

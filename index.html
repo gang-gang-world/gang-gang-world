@@ -1361,5 +1361,38 @@ action("settle",async()=>{
 });
 
 </script>
-</body>
+<nav id="bottomNav">
+  <button onclick="window.scrollTo({top:0,behavior:'smooth'})">
+    🏠<br>ホーム
+  </button>
+
+  <button onclick="document.getElementById('raceTitle').scrollIntoView({behavior:'smooth',block:'center'})">
+    🚤<br>レース
+  </button>
+
+  <button id="adminNav" hidden
+    onclick="document.getElementById('adminArea').scrollIntoView({behavior:'smooth'})">
+    ⚙️<br>管理
+  </button>
+</nav>
+
+<script>
+const adminPanel =
+  document.getElementById("adminArea");
+
+const adminNav =
+  document.getElementById("adminNav");
+
+function updateNavigation() {
+  adminNav.hidden = adminPanel.hidden;
+}
+
+new MutationObserver(updateNavigation)
+  .observe(adminPanel, {
+    attributes: true,
+    attributeFilter: ["hidden"]
+  });
+
+updateNavigation();
+</script></body>
 </html>

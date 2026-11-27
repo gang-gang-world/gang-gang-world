@@ -2198,5 +2198,129 @@ document.getElementById("rankingRefresh").onclick =
   loadWorldRanking;
 
 document.getElementById("rankingClose").onclick =
-  () => rankingPanel.close();</script></body>
+  () => rankingPanel.close();// プレイヤーIDの表示を整理
+const myIDField = document.getElementById("myTransferID");
+const copyIDButton = document.getElementById("copyTransferID");
+
+if (myIDField) {
+  myIDField.style.display = "none";
+}
+
+if (copyIDButton) {
+  copyIDButton.style.display = "none";
+}
+
+if (transferTo) {
+  transferTo.style.display = "none";
+}
+
+document.querySelectorAll("label,p,div").forEach(node => {
+  if (node.children.length !== 0) return;
+
+  const text = node.textContent.trim();
+
+  if (
+    text === "あなたのプレイヤーID" ||
+    text === "送信相手のID"
+  ) {
+    node.style.display = "none";
+  }
+});
+
+// 検索名を変更したら送信先を解除
+const nicknameSearchField = document.querySelector(
+  'input[placeholder="相手のニックネーム"]'
+);
+
+if (nicknameSearchField) {
+  nicknameSearchField.addEventListener("input", () => {
+    transferTo.value = "";
+    document.getElementById("searchMessage").textContent =
+      "相手を検索してください";
+  });
+}
+
+// 譲渡履歴をニックネーム表示
+let worldNicknameMap = new Map();
+
+async function refreshWorldNicknames() {
+  if (!rankingAuth().currentUser) return;
+
+  try {
+    const profiles = await rankingGetDocs(
+      rankingCollection(rankingDB, "profiles")
+    );
+
+    worldNicknameMap = new Map();
+
+    profiles.forEach(p => {
+      worldNicknameMap.set(p.id, p.data().nickname);
+    });
+
+    replaceWorldHistoryNames();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function replaceWorldHistoryNames() {
+  if (!rankingAuth().currentUser) return;
+
+  const walker = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_TEXT
+  );
+
+  let node;
+
+  while ((node = walker.nextNode())) {
+    if (node.parentElement.closest(
+      "script,style,input,textarea"
+    )) continue;
+
+    const match = node.nodeValue.match(
+      /^\s*([A-Za-z0-9]{20,128})\s*→\s*([A-Za-z0-9]{20,128})\s*$/
+    );
+
+    if (!match) continue;
+
+    const from = worldNicknameMap.get(match[1])
+      || "名前未登録";
+
+    const to = worldNicknameMap.get(match[2])
+      || "名前未登録";
+
+    node.nodeValue = from + " → " + to;
+  }
+}
+
+const worldHistoryObserver = new MutationObserver(() => {
+  replaceWorldHistoryNames();
+});
+
+worldHistoryObserver.observe(document.body, {
+  childList: true,
+  subtree: true
+});
+
+rankingAuth().onAuthStateChanged(user => {
+  worldNicknameMap.clear();
+
+  if (user) {
+    refreshWorldNicknames();
+  }
+});
+
+document.addEventListener("click", event => {
+  const button = event.target.closest("button");
+
+  if (!button) return;
+
+  if (
+    button.textContent.includes("譲渡履歴を更新") ||
+    button.textContent.includes("名前を登録・変更")
+  ) {
+    setTimeout(refreshWorldNicknames, 1500);
+  }
+});</script></body>
 </html>

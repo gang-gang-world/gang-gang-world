@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ギャンギャンワールド</title>
 <style>
 body {
@@ -11,15 +11,17 @@ body {
   font-family: sans-serif;
   text-align: center;
   padding: 15px;
+  max-width: 650px;
+  margin: auto;
 }
-h1 { color: gold; font-size: 28px; }
+h1, #points { color: gold; }
 section {
   background: #222230;
   padding: 20px;
   border-radius: 15px;
   margin-bottom: 15px;
 }
-input {
+input, button, select {
   box-sizing: border-box;
   width: 100%;
   padding: 13px;
@@ -29,25 +31,32 @@ input {
   font-size: 16px;
 }
 button {
-  width: 100%;
-  padding: 13px;
-  margin: 6px 0;
-  border: none;
-  border-radius: 8px;
   background: gold;
   color: black;
   font-weight: bold;
-  font-size: 16px;
 }
-#points {
-  color: gold;
-  font-size: 26px;
+button:disabled { opacity: .5; }
+[hidden] { display: none !important; }
+.line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-#message {
+.line span { min-width: 65px; }
+.boat {
+  padding: 10px;
+  margin: 4px;
+  border-radius: 5px;
+  color: black;
+  font-weight: bold;
+}
+label {
+  display: block;
+  text-align: left;
+}
+details { margin: 15px 0; }
+#message, #adminMessage {
   overflow-wrap: anywhere;
-}
-[hidden] {
-  display: none !important;
 }
 </style>
 </head>
@@ -58,8 +67,10 @@ button {
 
 <section id="loginArea">
 <h2>ログイン・新規登録</h2>
-<input id="email" type="email" placeholder="メールアドレス">
-<input id="password" type="password" placeholder="パスワード（6文字以上）">
+<input id="email" type="email"
+placeholder="メールアドレス">
+<input id="password" type="password"
+placeholder="パスワード（6文字以上）">
 <button id="login">ログイン</button>
 <button id="register">新規登録</button>
 <p id="message"></p>
@@ -77,18 +88,65 @@ button {
 <section>
 <h2>レース情報</h2>
 <p id="status">接続確認中...</p>
+<h3 id="raceTitle"></h3>
+<div id="boats"></div>
+<p id="resultView"></p>
+<details id="publicOdds" hidden>
+<summary>3連単オッズ一覧</summary>
+<div id="oddsView"></div>
+</details>
 </section>
 
 <section id="adminArea" hidden>
 <h2>管理者メニュー</h2>
 <p>管理者としてログイン中</p>
-<p>レース管理機能は準備中</p>
+
+<h3>レース管理</h3>
+
+<label>レース名
+<input id="raceName" placeholder="優勝戦">
+</label>
+
+<label>開催場
+<input id="venue" placeholder="住之江">
+</label>
+
+<label>レース番号
+<input id="raceNo" type="number"
+min="1" max="12" value="12">
+</label>
+
+<h3>出走選手</h3>
+<div id="boatInputs"></div>
+
+<details>
+<summary>3連単120通りのオッズ設定</summary>
+<div id="oddsInputs"></div>
+</details>
+
+<button id="save">レース情報を保存</button>
+<button id="open">投票受付開始</button>
+<button id="close">投票締切</button>
+
+<h3>レース結果</h3>
+<div id="resultInputs"></div>
+<button id="finish">結果登録</button>
+<button id="reset">次のレースを準備</button>
+
+<p id="adminMessage"></p>
 </section>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
 
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
+
+import {
+  getFirestore,
+  doc,
+  onSnapshot,
+  runTransaction
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
 
 import {
   getAuth,
@@ -108,19 +166,88 @@ const app = initializeApp({
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-const adminUID = "w3ZZn1g16fT9wfep9rkMzt7VrPt2";
+const adminUID =
+"w3ZZn1g16fT9wfep9rkMzt7VrPt2";
 
+const ref = doc(db, "races", "current");
 const el = id => document.getElementById(id);
+
+const nums = [1,2,3,4,5,6];
+const combos = [];
+
+for (const a of nums) {
+  for (const b of nums) {
+    for (const c of nums) {
+      if (new Set([a,b,c]).size === 3) {
+        combos.push(a+"-"+b+"-"+c);
+      }
+    }
+  }
+}
+
+for (const n of nums) {
+  const label = document.createElement("label");
+  label.textContent = n+"号艇";
+
+  const input = document.createElement("input");
+  input.id = "boat"+n;
+  input.placeholder = "選手名";
+
+  label.append(input);
+  el("boatInputs").append(label);
+}
+
+for (const k of combos) {
+  const label = document.createElement("label");
+  label.className = "line";
+
+  const span = document.createElement("span");
+  span.textContent = k;
+
+  const input = document.createElement("input");
+  input.id = "odd"+k;
+  input.type = "number";
+  input.min = "1";
+  input.step = "0.1";
+  input.placeholder = "未設定";
+
+  label.append(span,input);
+  el("oddsInputs").append(label);
+}
+
+for (const n of [1,2,3]) {
+  const label = document.createElement("label");
+  label.textContent = n+"着";
+
+  const select = document.createElement("select");
+  select.id = "res"+n;
+
+  for (const x of nums) {
+    const option = document.createElement("option");
+    option.value = x;
+    option.textContent = x+"号艇";
+    select.append(option);
+  }
+
+  select.value = n;
+  label.append(select);
+  el("resultInputs").append(label);
+}
 
 function showError(e) {
   const errors = {
-    "auth/email-already-in-use": "このメールアドレスは登録済みです。",
-    "auth/invalid-email": "メールアドレスを確認してください。",
-    "auth/weak-password": "パスワードは6文字以上にしてください。",
-    "auth/invalid-credential": "メールアドレスかパスワードが違います。"
+    "auth/email-already-in-use":
+      "このメールアドレスは登録済みです。",
+    "auth/invalid-email":
+      "メールアドレスを確認してください。",
+    "auth/weak-password":
+      "パスワードは6文字以上にしてください。",
+    "auth/invalid-credential":
+      "メールアドレスかパスワードが違います。"
   };
+
   el("message").textContent =
-    errors[e.code] || "エラー：" + e.code;
+    errors[e.code] || e.message;
 }
 
 el("register").onclick = async () => {
@@ -151,31 +278,277 @@ el("logout").onclick = async () => {
   await signOut(auth);
 };
 
+let unsubscribe = null;
+
+function fillForm(r) {
+  el("raceName").value = r.name || "";
+  el("venue").value = r.venue || "";
+  el("raceNo").value = r.raceNo || 12;
+
+  nums.forEach((n,i) => {
+    el("boat"+n).value = r.boats?.[i] || "";
+  });
+
+  combos.forEach(k => {
+    el("odd"+k).value = r.odds?.[k] ?? "";
+  });
+
+  [1,2,3].forEach((n,i) => {
+    el("res"+n).value = r.result?.[i] || n;
+  });
+}
+
+function renderRace(r) {
+  el("status").textContent =
+    r.status || "レース未登録";
+
+  el("raceTitle").textContent = [
+    r.venue,
+    r.raceNo ? r.raceNo+"R" : "",
+    r.name
+  ].filter(Boolean).join(" ");
+
+  el("boats").replaceChildren();
+
+  const colors = [
+    "white",
+    "#888888",
+    "#ff5555",
+    "#70aaff",
+    "#ffe65c",
+    "#65cf86"
+  ];
+
+  (r.boats || []).forEach((name,i) => {
+    const div = document.createElement("div");
+    div.className = "boat";
+    div.style.background = colors[i];
+    div.textContent = (i+1)+"号艇 "+name;
+    el("boats").append(div);
+  });
+
+  el("resultView").textContent =
+    r.result ? "結果："+r.result.join("-") : "";
+
+  el("oddsView").replaceChildren();
+
+  for (const k of combos) {
+    if (r.odds?.[k] != null) {
+      const div = document.createElement("div");
+      div.textContent = k+"　"+r.odds[k]+"倍";
+      el("oddsView").append(div);
+    }
+  }
+
+  el("publicOdds").hidden =
+    !Object.keys(r.odds || {}).length;
+
+  if (auth.currentUser?.uid === adminUID) {
+    fillForm(r);
+  }
+}
+
 onAuthStateChanged(auth, user => {
   el("loginArea").hidden = !!user;
   el("userArea").hidden = !user;
-  el("adminArea").hidden = !user || user.uid !== adminUID;
+  el("adminArea").hidden =
+    user?.uid !== adminUID;
+
   el("message").textContent = "";
 
-  if(user) {
+  if (user) {
     el("userName").textContent = user.email;
     el("role").textContent =
-      user.uid === adminUID ? "管理者" : "一般参加者";
+      user.uid === adminUID
+      ? "管理者"
+      : "一般参加者";
+
     el("password").value = "";
   }
+
+  if (unsubscribe) unsubscribe();
+
+  unsubscribe = onSnapshot(
+    ref,
+    snapshot => {
+      renderRace(
+        snapshot.exists() ? snapshot.data() : {}
+      );
+    },
+    e => {
+      el("status").textContent =
+        "接続エラー："+e.code;
+    }
+  );
 });
 
-try {
-  let race = await getDoc(doc(db, "races", "current"));
-  if (!race.exists()) {
-    race = await getDoc(doc(db, "races", "race1"));
+function formData() {
+  const name = el("raceName").value.trim();
+  const venue = el("venue").value.trim();
+  const raceNo = Number(el("raceNo").value);
+
+  const boats = nums.map(n =>
+    el("boat"+n).value.trim()
+  );
+
+  const odds = {};
+
+  if (
+    !name ||
+    !venue ||
+    !Number.isInteger(raceNo) ||
+    raceNo < 1 ||
+    raceNo > 12 ||
+    boats.some(x => !x)
+  ) {
+    throw Error(
+      "レース情報と全選手名を入力してください。"
+    );
   }
-  el("status").textContent = race.exists()
-    ? race.data().status || race.data().name || "接続成功！"
-    : "レース未登録";
-} catch(e) {
-  el("status").textContent = "接続エラー：" + e.code;
+
+  for (const k of combos) {
+    const value = el("odd"+k).value;
+
+    if (value !== "") {
+      const x = Number(value);
+
+      if (!Number.isFinite(x) || x < 1) {
+        throw Error("オッズは1倍以上にしてください。");
+      }
+
+      odds[k] = x;
+    }
+  }
+
+  return {name,venue,raceNo,boats,odds};
 }
+
+function action(id, fn) {
+  el(id).onclick = async () => {
+    if (auth.currentUser?.uid !== adminUID) {
+      return;
+    }
+
+    el(id).disabled = true;
+
+    try {
+      await fn();
+      el("adminMessage").textContent =
+        "更新しました！";
+    } catch(e) {
+      el("adminMessage").textContent = e.message;
+    } finally {
+      el(id).disabled = false;
+    }
+  };
+}
+
+async function change(fn) {
+  await runTransaction(db, async t => {
+    const snapshot = await t.get(ref);
+    const r = snapshot.exists()
+      ? snapshot.data()
+      : {};
+
+    t.set(ref, fn(r));
+  });
+}
+
+action("save", async () => {
+  const data = formData();
+
+  await change(r => {
+    if (
+      ["受付中","締切","確定"].includes(r.status)
+    ) {
+      throw Error("準備中のみ編集できます。");
+    }
+
+    return {
+      ...data,
+      status: "準備中",
+      result: null
+    };
+  });
+});
+
+action("open", async () => {
+  await change(r => {
+    if (
+      r.status !== "準備中" ||
+      r.boats?.length !== 6 ||
+      Object.keys(r.odds || {}).length !== 120
+    ) {
+      throw Error(
+        "全120通りのオッズとレース情報を保存してください。"
+      );
+    }
+
+    return {
+      ...r,
+      status: "受付中"
+    };
+  });
+});
+
+action("close", async () => {
+  await change(r => {
+    if (r.status !== "受付中") {
+      throw Error("受付中のみ締切できます。");
+    }
+
+    return {
+      ...r,
+      status: "締切"
+    };
+  });
+});
+
+action("finish", async () => {
+  const result = [1,2,3].map(n =>
+    Number(el("res"+n).value)
+  );
+
+  if (new Set(result).size !== 3) {
+    throw Error("同じ号艇は選べません。");
+  }
+
+  await change(r => {
+    if (r.status !== "締切") {
+      throw Error("先に投票を締め切ってください。");
+    }
+
+    return {
+      ...r,
+      status: "確定",
+      result
+    };
+  });
+});
+
+action("reset", async () => {
+  if (!confirm("現在のレース情報を消去しますか？")) {
+    throw Error("キャンセルしました。");
+  }
+
+  await change(r => {
+    if (
+      r.status &&
+      r.status !== "確定" &&
+      r.status !== "準備中"
+    ) {
+      throw Error("先にレースを確定してください。");
+    }
+
+    return {
+      status: "準備中",
+      boats: [],
+      odds: {},
+      result: null
+    };
+  });
+});
+
 </script>
 </body>
 </html>

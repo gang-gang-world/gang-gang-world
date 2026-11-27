@@ -1420,5 +1420,85 @@ new MutationObserver(updateNavigation)
   });
 
 updateNavigation();
+</script><script>
+(() => {
+  const get = id => document.getElementById(id);
+
+  const home = get("userArea");
+  const login = get("loginArea");
+  const race = get("raceTitle").closest("section");
+  const play = get("playArea");
+  const admin = get("adminArea");
+  const nav = get("bottomNav");
+
+  if (!nav) return;
+
+  let current = "home";
+
+  const pages = {
+    home: [home, login],
+    race: [race, play],
+    admin: [admin]
+  };
+
+  function show(page) {
+    if (page === "admin" && admin.hidden) {
+      page = "home";
+    }
+
+    current = page;
+
+    Object.values(pages).flat().forEach(section => {
+      section.style.display =
+        pages[page].includes(section)
+        ? ""
+        : "none";
+    });
+
+    nav.querySelectorAll("button").forEach(button => {
+      const active = button.dataset.page === page;
+
+      button.style.background =
+        active ? "#303b4d" : "transparent";
+
+      button.style.borderRadius = "10px";
+      button.style.opacity = active ? "1" : "0.65";
+    });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "instant"
+    });
+  }
+
+  const buttons = nav.querySelectorAll("button");
+
+  ["home", "race", "admin"].forEach((page, i) => {
+    if (!buttons[i]) return;
+
+    buttons[i].dataset.page = page;
+    buttons[i].onclick = () => show(page);
+  });
+
+  const observer = new MutationObserver(() => {
+    if (home.hidden) {
+      show("home");
+    } else {
+      show(current);
+    }
+  });
+
+  observer.observe(home, {
+    attributes: true,
+    attributeFilter: ["hidden"]
+  });
+
+  observer.observe(admin, {
+    attributes: true,
+    attributeFilter: ["hidden"]
+  });
+
+  show("home");
+})();
 </script></body>
 </html>

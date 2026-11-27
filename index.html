@@ -2322,5 +2322,22 @@ document.addEventListener("click", event => {
   ) {
     setTimeout(refreshWorldNicknames, 1500);
   }
-});</script></body>
+});
+const homeLayoutStyle = document.createElement("style");
+
+homeLayoutStyle.textContent = `
+body {
+  padding-bottom: calc(150px + env(safe-area-inset-bottom)) !important;
+}
+
+#bottomNav {
+  bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+}
+
+input, button {
+  scroll-margin-bottom: 150px;
+}
+`;
+
+document.head.appendChild(homeLayoutStyle);</script></body>
 </html>

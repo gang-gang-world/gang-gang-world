@@ -2372,5 +2372,319 @@ document.head.appendChild(homeLayoutStyle);function compactNicknamePanel() {
 　}
   compactNicknamePanel ();
 </script>
+
+<script type="module">
+import { getApp } from
+"https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
+
+import { getAuth, onAuthStateChanged } from
+"https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  collection,
+  getDocs,
+  runTransaction,
+  serverTimestamp
+} from
+"https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+const app = getApp();
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const adminUID =
+"w3ZZn1g16fT9wfep9rkMzt7VrPt2";
+
+const panel = document.createElement("div");
+
+panel.hidden = true;
+
+panel.style.cssText = `
+  background:#0d1420;
+  border:1px solid #f5cf65;
+  border-radius:16px;
+  padding:16px;
+  margin-top:20px;
+`;
+
+panel.innerHTML = `
+  <h2>👑 管理者ポイント発行</h2>
+
+  <p>大会賞金・特別ボーナス</p>
+
+  <input id="grantName"
+    placeholder="相手のニックネーム"
+    maxlength="20">
+
+  <input id="grantAmount"
+    type="number"
+    min="1"
+    step="1"
+    placeholder="発行ポイント数">
+
+  <input id="grantReason"
+    maxlength="100"
+    placeholder="理由（優勝賞金など）">
+
+  <button id="grantButton">
+    ポイントを発行する
+  </button>
+
+  <p id="grantMessage"></p>
+
+  <hr>
+
+  <h3>📋 ポイント発行履歴</h3>
+
+  <button id="grantRefresh">
+    履歴を更新
+  </button>
+
+  <div id="grantHistory"></div>
+`;
+
+document.getElementById("adminArea")
+.appendChild(panel);
+
+const el = id => document.getElementById(id);
+
+function isAdmin() {
+  return auth.currentUser?.uid === adminUID;
+}
+
+async function loadGrantHistory() {
+
+  if (!isAdmin()) return;
+
+  const area = el("grantHistory");
+
+  area.textContent = "取得中...";
+
+  try {
+
+    const [snap, profiles] = await Promise.all([
+      getDocs(collection(db, "pointGrants")),
+      getDocs(collection(db, "profiles"))
+    ]);
+
+    if (!isAdmin()) return;
+
+    const names = new Map();
+
+    profiles.forEach(p => {
+      names.set(p.id, p.data().nickname);
+    });
+
+    const records = snap.docs.sort((a,b) =>
+      (b.data().createdAt?.seconds || 0) -
+      (a.data().createdAt?.seconds || 0)
+    );
+
+    area.replaceChildren();
+
+    if (!records.length) {
+      area.textContent = "発行履歴はありません";
+      return;
+    }
+
+    records.forEach(record => {
+
+      const data = record.data();
+
+      const card = document.createElement("div");
+
+      card.style.cssText = `
+        background:#171e2c;
+        padding:12px;
+        margin:8px 0;
+        border-radius:10px;
+        border:1px solid #354052;
+      `;
+
+      const name = document.createElement("strong");
+
+      name.textContent =
+        names.get(data.uid) || "名前未登録";
+
+      const amount = document.createElement("h3");
+
+      amount.style.color = "#f5cf65";
+
+      amount.textContent =
+        "+" + Number(data.amount).toLocaleString()
+        + " pt";
+
+      const reason = document.createElement("p");
+
+      reason.textContent = data.reason;
+
+      const date = document.createElement("small");
+
+      date.textContent =
+        data.createdAt?.toDate()
+        .toLocaleString("ja-JP") || "";
+
+      card.append(name, amount, reason, date);
+
+      area.appendChild(card);
+
+    });
+
+  } catch(e) {
+
+    if (isAdmin()) {
+      area.textContent =
+        "履歴取得エラー：" + e.message;
+    }
+  }
+}
+
+onAuthStateChanged(auth, user => {
+
+  panel.hidden = user?.uid !== adminUID;
+
+  el("grantHistory").replaceChildren();
+
+  el("grantMessage").textContent = "";
+
+  if (!panel.hidden) {
+    loadGrantHistory();
+  }
+
+});
+
+el("grantRefresh").onclick = loadGrantHistory;
+
+let granting = false;
+
+el("grantButton").onclick = async () => {
+
+  if (!isAdmin() || granting) return;
+
+  const name = el("grantName").value.trim();
+
+  const amount = Number(el("grantAmount").value);
+
+  const reason = el("grantReason").value.trim();
+
+  const msg = el("grantMessage");
+
+  if (
+    name.length < 2 ||
+    name.length > 20 ||
+    name.includes("/") ||
+    name === ".." ||
+    /^__.*__$/.test(name)
+  ) {
+    msg.textContent =
+      "ニックネームを確認してください";
+    return;
+  }
+
+  if (
+    !Number.isSafeInteger(amount) ||
+    amount < 1
+  ) {
+    msg.textContent =
+      "正しいポイント数を入力してください";
+    return;
+  }
+
+  if (!reason) {
+    msg.textContent =
+      "発行理由を入力してください";
+    return;
+  }
+
+  if (!confirm(
+    name + " さんに\n" +
+    amount.toLocaleString() +
+    " ptを発行しますか？\n理由：" + reason
+  )) return;
+
+  granting = true;
+
+  el("grantButton").disabled = true;
+
+  msg.textContent = "発行処理中...";
+
+  try {
+
+    const log = doc(collection(db,"pointGrants"));
+
+    await runTransaction(db, async t => {
+
+      if (!isAdmin()) {
+        throw Error("管理者権限がありません");
+      }
+
+      const nickname = await t.get(
+        doc(db,"nicknames",name)
+      );
+
+      if (!nickname.exists()) {
+        throw Error("参加者が見つかりません");
+      }
+
+      const uid = nickname.data().uid;
+
+      const target = doc(db,"users",uid);
+
+      const player = await t.get(target);
+
+      if (!player.exists()) {
+        throw Error("参加者が存在しません");
+      }
+
+      const balance = player.data().points;
+
+      if (
+        !Number.isSafeInteger(balance) ||
+        !Number.isSafeInteger(balance + amount)
+      ) {
+        throw Error("ポイント上限エラー");
+      }
+
+      t.update(target,{
+        points:balance + amount
+      });
+
+      t.set(log,{
+        uid:uid,
+        amount:amount,
+        reason:reason,
+        createdAt:serverTimestamp()
+      });
+
+    });
+
+    msg.textContent =
+      "🎉 " + name + " さんに " +
+      amount.toLocaleString() +
+      " ptを発行しました！";
+
+    el("grantName").value = "";
+    el("grantAmount").value = "";
+    el("grantReason").value = "";
+
+    await loadGrantHistory();
+
+  } catch(e) {
+
+    msg.textContent =
+      "発行失敗：" + e.message;
+
+  } finally {
+
+    granting = false;
+
+    el("grantButton").disabled = false;
+
+  }
+
+};
+</script>
 </body>
 </htm_>

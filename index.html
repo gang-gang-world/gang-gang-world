@@ -145,42 +145,6 @@ placeholder="一括設定する倍率">
 <p id="adminMessage"></p>
 </section>
 
-el("autoOdds").onclick = () => {
-  const weights = [0.42, 0.20, 0.15, 0.10, 0.08, 0.05];
-
-  for (const k of combos) {
-    const [a,b,c] = k.split("-").map(Number);
-
-    const p1 = weights[a-1];
-    const p2 = weights[b-1] / (1-p1);
-    const p3 = weights[c-1] /
-      (1-p1-weights[b-1]);
-
-    const probability = p1*p2*p3;
-    const odds = Math.max(1, 0.75/probability);
-
-    el("odd"+k).value = odds.toFixed(1);
-  }
-
-  el("adminMessage").textContent =
-    "120通りのオッズを自動生成しました！";
-};
-
-el("bulkSet").onclick = () => {
-  const value = Number(el("bulkOdds").value);
-
-  if (!Number.isFinite(value) || value < 1) {
-    alert("1倍以上を入力してください。");
-    return;
-  }
-
-  for (const k of combos) {
-    el("odd"+k).value = value.toFixed(1);
-  }
-
-  el("adminMessage").textContent =
-    "120通りのオッズを一括設定しました！";
-};
   <script type="module">
 
 import { initializeApp }
@@ -593,7 +557,42 @@ action("reset", async () => {
     };
   });
 });
+el("autoOdds").onclick = () => {
+  const weights = [0.42, 0.20, 0.15, 0.10, 0.08, 0.05];
 
+  for (const k of combos) {
+    const [a,b,c] = k.split("-").map(Number);
+
+    const p1 = weights[a-1];
+    const p2 = weights[b-1] / (1-p1);
+    const p3 = weights[c-1] /
+      (1-p1-weights[b-1]);
+
+    const probability = p1*p2*p3;
+    const odds = Math.max(1, 0.75/probability);
+
+    el("odd"+k).value = odds.toFixed(1);
+  }
+
+  el("adminMessage").textContent =
+    "120通りのオッズを自動生成しました！";
+};
+
+el("bulkSet").onclick = () => {
+  const value = Number(el("bulkOdds").value);
+
+  if (!Number.isFinite(value) || value < 1) {
+    alert("1倍以上を入力してください。");
+    return;
+  }
+
+  for (const k of combos) {
+    el("odd"+k).value = value.toFixed(1);
+  }
+
+  el("adminMessage").textContent =
+    "120通りのオッズを一括設定しました！";
+};
 </script>
 </body>
 </html>

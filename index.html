@@ -1824,5 +1824,220 @@ el("sendTransfer").onclick = async () => {
     el("sendTransfer").disabled = !auth.currentUser;
   }
 };
+</script><script type="module">
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  runTransaction
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+const auth = getAuth();
+const db = getFirestore();
+
+const myID = document.getElementById("myTransferID");
+const transferTo = document.getElementById("transferTo");
+
+const panel = document.createElement("div");
+
+panel.style.cssText = `
+  background:#171e2c;
+  border:1px solid #c9a348;
+  border-radius:15px;
+  padding:15px;
+  margin:15px 0;
+`;
+
+panel.innerHTML = `
+  <h3 style="color:#f5cf65">👤 ニックネーム設定</h3>
+  <p id="currentNickname">未登録</p>
+  <input id="nicknameInput"
+    maxlength="20"
+    placeholder="ニックネームを入力">
+  <button id="saveNickname">名前を登録・変更</button>
+  <p id="nicknameMessage"></p>
+`;
+
+myID.before(panel);
+
+const el = id => document.getElementById(id);
+
+let saving = false;
+
+onAuthStateChanged(auth, async user => {
+  el("currentNickname").textContent = "未登録";
+  el("nicknameInput").value = "";
+  el("nicknameMessage").textContent = "";
+
+  if (!user) return;
+
+  try {
+    const p = await getDoc(
+      doc(db, "profiles", user.uid)
+    );
+
+    if (auth.currentUser?.uid !== user.uid) return;
+
+    if (p.exists()) {
+      el("currentNickname").textContent =
+        p.data().nickname;
+      el("nicknameInput").value =
+        p.data().nickname;
+    }
+  } catch (e) {
+    el("nicknameMessage").textContent =
+      "名前取得エラー";
+  }
+});
+
+el("saveNickname").onclick = async () => {
+  const user = auth.currentUser;
+  if (!user || saving) return;
+
+  const name = el("nicknameInput").value.trim();
+  const msg = el("nicknameMessage");
+
+  if (
+    name.length < 2 ||
+    name.length > 20 ||
+    name.includes("/") ||
+    name === ".." ||
+    /^__.*__$/.test(name)
+  ) {
+    msg.textContent = "使用できない名前です";
+    return;
+  }
+
+  saving = true;
+  el("saveNickname").disabled = true;
+
+  try {
+    const profile = doc(db, "profiles", user.uid);
+    const newName = doc(db, "nicknames", name);
+
+    await runTransaction(db, async t => {
+      const p = await t.get(profile);
+      const n = await t.get(newName);
+
+      const oldName = p.exists()
+        ? p.data().nickname : "";
+
+      if (n.exists() && n.data().uid !== user.uid) {
+        throw Error("この名前は既に使われています");
+      }
+
+      if (oldName === name && n.exists()) return;
+
+      if (oldName && oldName !== name) {
+        t.delete(doc(db, "nicknames", oldName));
+      }
+
+      if (!n.exists()) {
+        t.set(newName, {
+          uid: user.uid
+        });
+      }
+
+      t.set(profile, {
+        nickname: name
+      });
+    });
+
+    if (auth.currentUser?.uid === user.uid) {
+      el("currentNickname").textContent = name;
+      msg.textContent = "ニックネーム登録完了！";
+    }
+
+  } catch (e) {
+    msg.textContent = e.message;
+  } finally {
+    saving = false;
+    el("saveNickname").disabled = false;
+  }
+};
+
+const search = document.createElement("div");
+
+search.innerHTML = `
+  <p>🔍 ニックネームで相手を検索</p>
+  <input id="searchNickname"
+    placeholder="相手のニックネーム">
+  <button id="findNickname">プレイヤーを検索</button>
+  <p id="searchMessage"></p>
+`;
+
+transferTo.before(search);
+
+el("searchNickname").oninput = () => {
+  transferTo.value = "";
+  el("searchMessage").textContent = "";
+};
+
+onAuthStateChanged(auth, () => {
+  el("searchNickname").value = "";
+  el("searchMessage").textContent = "";
+  transferTo.value = "";
+});
+
+el("findNickname").onclick = async () => {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const name = el("searchNickname").value.trim();
+  const msg = el("searchMessage");
+
+  transferTo.value = "";
+
+  if (
+    name.length < 2 ||
+    name.length > 20 ||
+    name.includes("/") ||
+    name === ".." ||
+    /^__.*__$/.test(name)
+  ) {
+    msg.textContent = "名前を確認してください";
+    return;
+  }
+
+  try {
+    const result = await getDoc(
+      doc(db, "nicknames", name)
+    );
+
+    if (
+      auth.currentUser?.uid !== user.uid ||
+      el("searchNickname").value.trim() !== name
+    ) return;
+
+    if (!result.exists()) {
+      msg.textContent = "プレイヤーが見つかりません";
+      return;
+    }
+
+    const uid = result.data().uid;
+
+    if (uid === user.uid) {
+      msg.textContent = "自分には送信できません";
+      return;
+    }
+
+    transferTo.value = uid;
+
+    msg.textContent =
+      "✅ " + name + " さんが見つかりました";
+
+  } catch (e) {
+    msg.textContent = "検索エラー：" + e.message;
+  }
+};
+
+transferTo.addEventListener("input", () => {
+  el("searchMessage").textContent = "";
+});
 </script></body>
 </html>

@@ -2039,5 +2039,164 @@ el("findNickname").onclick = async () => {
 transferTo.addEventListener("input", () => {
   el("searchMessage").textContent = "";
 });
-</script></body>
+import {
+  getFirestore as rankingFirestore,
+  collection as rankingCollection,
+  getDocs as rankingGetDocs
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+import {
+  getAuth as rankingAuth
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+const rankingDB = rankingFirestore();
+
+const rankingPanel = document.createElement("dialog");
+
+rankingPanel.style.cssText = `
+  width:94%;
+  max-width:500px;
+  max-height:85vh;
+  overflow:auto;
+  background:#101622;
+  color:white;
+  border:1px solid #f5cf65;
+  border-radius:20px;
+  padding:18px;
+`;
+
+rankingPanel.innerHTML = `
+  <h2 style="color:#f5cf65;text-align:center">
+    🏆 ポイントランキング
+  </h2>
+  <p style="text-align:center;color:#aaa">
+    GANG GANG WORLD
+  </p>
+  <button id="rankingRefresh">ランキング更新</button>
+  <div id="rankingList">読み込み中...</div>
+  <button id="rankingClose">閉じる</button>
+`;
+
+document.body.appendChild(rankingPanel);
+
+async function loadWorldRanking() {
+  const list = document.getElementById("rankingList");
+  list.textContent = "読み込み中...";
+
+  if (!rankingAuth().currentUser) {
+    list.textContent = "ログインしてください";
+    return;
+  }
+
+  try {
+    const [users, profiles] = await Promise.all([
+      rankingGetDocs(rankingCollection(rankingDB,"users")),
+      rankingGetDocs(rankingCollection(rankingDB,"profiles"))
+    ]);
+
+    const names = new Map();
+
+    profiles.forEach(p => {
+      names.set(p.id,p.data().nickname);
+    });
+
+    const players = users.docs.map(u => ({
+      uid:u.id,
+      name:names.get(u.id) || "名前未登録",
+      points:Number(u.data().points || 0)
+    }));
+
+    players.sort((a,b) => b.points-a.points);
+
+    list.replaceChildren();
+
+    if (!players.length) {
+      list.textContent = "参加者がいません";
+    }
+
+    players.forEach((p,i) => {
+      const colors = ["#f5cf65","#c0c0c0","#cd7f32"];
+      const medals = ["👑","🥈","🥉"];
+      const color = colors[i] || "#ffffff";
+
+      const card = document.createElement("div");
+
+      card.style.cssText = `
+        background:#1b2230;
+        border:1px solid ${i<3?color:"#30394a"};
+        border-radius:12px;
+        padding:15px;
+        margin:10px 0;
+        text-align:left;
+      `;
+
+      const name = document.createElement("div");
+
+      name.style.cssText = `
+        font-size:18px;
+        font-weight:bold;
+        color:${color};
+        overflow-wrap:anywhere;
+      `;
+
+      name.textContent =
+        (medals[i] || "") +
+        " 第"+(i+1)+"位　"+p.name;
+
+      const points = document.createElement("div");
+
+      points.style.cssText = `
+        color:#f5cf65;
+        font-size:24px;
+        font-weight:bold;
+        margin-top:8px;
+      `;
+
+      points.textContent =
+        p.points.toLocaleString()+" pt";
+
+      card.append(name,points);
+      list.appendChild(card);
+    });
+
+  } catch(e) {
+    list.textContent = "取得エラー："+e.message;
+  }
+}
+
+const rankingTab = document.createElement("button");
+
+rankingTab.id = "worldRankingTab";
+rankingTab.innerHTML = "🏆<br>ランキング";
+
+rankingTab.style.cssText = `
+  flex:1;
+  width:auto;
+  background:transparent;
+  color:#f5cf65;
+  font-size:12px;
+  margin:0;
+  padding:8px 2px;
+`;
+
+rankingTab.onclick = () => {
+  if (!rankingPanel.open) {
+    rankingPanel.showModal();
+  }
+  loadWorldRanking();
+};
+
+const rankingNav = document.getElementById("bottomNav");
+
+if (rankingNav) {
+  rankingNav.appendChild(rankingTab);
+} else {
+  document.body.appendChild(rankingTab);
+}
+
+document.getElementById("rankingRefresh").onclick =
+  loadWorldRanking;
+
+document.getElementById("rankingClose").onclick =
+  () => rankingPanel.close();</script></body>
 </html>

@@ -2339,5 +2339,37 @@ input, button {
 }
 `;
 
-document.head.appendChild(homeLayoutStyle);</script></body>
+document.head.appendChild(homeLayoutStyle);function compactNicknamePanel() {
+  const heading = [...document.querySelectorAll("h2,h3,h4")]
+    .find(e => e.textContent.includes("ニックネーム設定"));
+
+  if (!heading) return;
+
+  const panel = heading.parentElement;
+
+  if (panel.dataset.compactReady) return;
+
+  panel.dataset.compactReady = "true";
+
+  const details = document.createElement("details");
+  const summary = document.createElement("summary");
+
+  summary.textContent = "👤 ニックネーム設定・変更";
+  summary.style.cssText = `
+    color:#f5cf65;
+    font-weight:bold;
+    cursor:pointer;
+    padding:12px 0;
+  `;
+
+  details.appendChild(summary);
+
+  while (panel.firstChild) {
+    details.appendChild(panel.firstChild);
+  }
+
+  panel.appendChild(details);
+}
+
+compactNicknamePanel();</script></body>
 </html>

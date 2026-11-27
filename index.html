@@ -612,7 +612,95 @@ el("bulkSet").onclick = () => {
   el("oddsMessage").textContent =
     "120通りのオッズを一括設定しました！";
 };
+let pointsUnsubscribe = null;
 
+onAuthStateChanged(auth, async user => {
+  if (pointsUnsubscribe) {
+    pointsUnsubscribe();
+    pointsUnsubscribe = null;
+  }
+
+  el("points").textContent = "未設定";
+
+  if (!user) return;
+
+  const userRef = doc(db, "users", user.uid);
+
+  try {
+    await runTransaction(db, async t => {
+      const snapshot = await t.get(userRef);
+
+      if (!snapshot.exists()) {
+        t.set(userRef, {
+          points: 100000
+        });
+      }
+    });
+
+    if (auth.currentUser?.uid !== user.uid) return;
+
+    pointsUnsubscribe = onSnapshot(
+      userRef,
+      snapshot => {
+        const points = snapshot.data()?.points || 0;
+
+        el("points").textContent =
+          points.toLocaleString() + " pt";
+      },
+      e => {
+        el("points").textContent = "取得エラー";
+      }
+    );
+
+  } catch(e) {
+    el("points").textContent =
+      "エラー：" + e.message;
+  }
+let pointsUnsubscribe = null;
+
+onAuthStateChanged(auth, async user => {
+  if (pointsUnsubscribe) {
+    pointsUnsubscribe();
+    pointsUnsubscribe = null;
+  }
+
+  el("points").textContent = "未設定";
+
+  if (!user) return;
+
+  const userRef = doc(db, "users", user.uid);
+
+  try {
+    await runTransaction(db, async t => {
+      const snapshot = await t.get(userRef);
+
+      if (!snapshot.exists()) {
+        t.set(userRef, {
+          points: 100000
+        });
+      }
+    });
+
+    if (auth.currentUser?.uid !== user.uid) return;
+
+    pointsUnsubscribe = onSnapshot(
+      userRef,
+      snapshot => {
+        const points = snapshot.data()?.points || 0;
+
+        el("points").textContent =
+          points.toLocaleString() + " pt";
+      },
+      e => {
+        el("points").textContent = "取得エラー";
+      }
+    );
+
+  } catch(e) {
+    el("points").textContent =
+      "エラー：" + e.message;
+  }
+});
 </script>
 </body>
 </html>

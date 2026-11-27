@@ -321,6 +321,32 @@ body {
   font-size: 12px;
   margin: 0;
   padding: 8px;
+}/* FIX BOTTOM NAV */
+
+#bottomNav {
+  position: fixed !important;
+  bottom: 85px !important;
+  left: 10px !important;
+  right: 10px !important;
+  display: flex !important;
+  z-index: 99999 !important;
+  background: #111827 !important;
+  border: 1px solid #f5cf65;
+  border-radius: 16px;
+}
+
+#bottomNav button {
+  width: auto !important;
+  flex: 1;
+  color: #f5cf65 !important;
+}
+
+#bottomNav button[hidden] {
+  display: none !important;
+}
+
+body {
+  padding-bottom: 180px !important;
 }</style>
 </head>
 <body>

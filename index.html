@@ -2725,5 +2725,725 @@ el("grantButton").onclick = async () => {
 
 };
 </script>
+<style>
+.ggw-race-card {
+  background:#101827;
+  border:1px solid #b99a50;
+  border-radius:14px;
+  padding:12px;
+  margin:14px 0;
+  text-align:left;
+}
+.ggw-race-card h3 {
+  color:#f5cf65;
+  margin:0 0 12px;
+}
+.ggw-odds-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.ggw-odds-card {
+  background:#101827;
+  border:1px solid #455168;
+  border-radius:10px;
+  overflow:hidden;
+}
+.ggw-odds-head {
+  padding:10px;
+  font-weight:900;
+  text-align:center;
+}
+.ggw-odds-row {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:4px;
+  padding:9px 6px;
+  border-bottom:1px solid #303b4d;
+  font-size:13px;
+}
+.ggw-odds-row strong {
+  color:#f5cf65;
+  font-variant-numeric:tabular-nums;
+}
+.ggw-ticket-card {
+  background:#1d293b;
+  border:1px solid #455168;
+  border-radius:10px;
+  padding:12px;
+  margin:8px 0;
+  overflow-wrap:anywhere;
+}
+.ggw-ticket-key {
+  font-size:23px;
+  font-weight:900;
+  color:#f5cf65;
+}
+.ggw-profit {
+  color:#65df95;
+  font-weight:bold;
+}
+.ggw-loss {
+  color:#ff7777;
+  font-weight:bold;
+}
+.ggw-muted {
+  color:#aab5c5;
+  font-size:12px;
+}
+.ggw-summary {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin:10px 0;
+}
+.ggw-stat {
+  padding:10px;
+  background:#0b1220;
+  border:1px solid #354052;
+  border-radius:8px;
+  text-align:center;
+}
+.ggw-stat strong {
+  display:block;
+  font-size:17px;
+  margin-top:5px;
+}
+.ggw-race-card summary {
+  cursor:pointer;
+  padding:10px 0;
+  font-weight:bold;
+  color:#f5cf65;
+}
+#publicOdds {
+  text-align:left;
+}
+#publicOdds summary {
+  padding:12px;
+  background:#263247;
+  border:1px solid #b99a50;
+  border-radius:10px;
+  color:#f5cf65;
+  font-weight:bold;
+}
+</style>
+
+<script type="module">
+
+import {
+  getFirestore,
+  collection,
+  doc,
+  onSnapshot,
+  query,
+  where,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+const db = getFirestore();
+const auth = getAuth();
+
+const ADMIN =
+  "w3ZZn1g16fT9wfep9rkMzt7VrPt2";
+
+const el = id =>
+  document.getElementById(id);
+
+const fmt = n =>
+  Number(n || 0).toLocaleString("ja-JP");
+
+const colors = [
+  "#ffffff",
+  "#222222",
+  "#df4040",
+  "#3478d8",
+  "#f5d84c",
+  "#37a76b"
+];
+
+let race = {};
+let tickets = [];
+let names = new Map();
+let stops = [];
+let raceNames = new Map();
+
+function node(tag, text, cls) {
+  const d = document.createElement(tag);
+
+  if(text !== undefined) {
+    d.textContent = text;
+  }
+
+  if(cls) d.className = cls;
+
+  return d;
+}
+
+function playerName(uid) {
+  return names.get(uid)
+    || "参加者 " + String(uid).slice(0,6);
+}
+
+function raceName(round) {
+
+  if(round === race.round) {
+    return [
+      race.venue,
+      race.raceNo ? race.raceNo+"R" : "",
+      race.name
+    ].filter(Boolean).join(" ")
+    || "現在のレース";
+  }
+
+  return raceNames.get(round)
+    || "過去のレース "
+      + String(round || "").slice(0,8);
+}
+
+function renderOdds() {
+
+  const area = el("oddsView");
+
+  if(!area) return;
+
+  const odds = race.finalOdds || race.odds || {};
+
+  if(!Object.keys(odds).length) return;
+
+  area.replaceChildren();
+
+  const admin =
+    auth.currentUser?.uid === ADMIN;
+
+  const totals = {};
+
+  let total = 0;
+
+  if(admin) {
+
+    tickets.filter(t =>
+      t.round === race.round
+    ).forEach(t => {
+
+      totals[t.key] =
+        (totals[t.key] || 0) + t.stake;
+
+      total += t.stake;
+
+    });
+
+  }
+
+  const heading = node(
+    "p",
+    race.finalOdds
+      ? "確定オッズ"
+      : admin && race.status === "受付中"
+        ? "変動オッズ・管理者表示"
+        : "基本オッズ",
+    "ggw-muted"
+  );
+
+  area.append(heading);
+
+  const grid = node(
+    "div",
+    undefined,
+    "ggw-odds-grid"
+  );
+
+  for(let n=1; n<=6; n++) {
+
+    const card = node(
+      "div",
+      undefined,
+      "ggw-odds-card"
+    );
+
+    const head = node(
+      "div",
+      n+"号艇 1着",
+      "ggw-odds-head"
+    );
+
+    head.style.background = colors[n-1];
+
+    head.style.color =
+      [1,5].includes(n)
+        ? "#111111"
+        : "#ffffff";
+
+    card.append(head);
+
+    Object.entries(odds)
+      .filter(([key]) =>
+        key.startsWith(n+"-")
+      )
+      .sort(([a],[b]) =>
+        a.localeCompare(b)
+      )
+      .forEach(([key,base]) => {
+
+        let value = Number(base);
+
+        if(
+          admin &&
+          race.dynamicOdds &&
+          !race.finalOdds &&
+          race.status === "受付中"
+        ) {
+
+          value = Math.max(
+            1,
+            Math.floor(
+              10 * (
+                base * 10000 + total * 0.75
+              ) / (
+                10000 + base * (totals[key] || 0)
+              )
+            ) / 10
+          );
+
+        }
+
+        const row = node(
+          "div",
+          undefined,
+          "ggw-odds-row"
+        );
+
+        row.append(
+          node("span",key),
+          node("strong",value.toFixed(1)+"倍")
+        );
+
+        card.append(row);
+
+      });
+
+    grid.append(card);
+
+  }
+
+  area.append(grid);
+
+}
+
+function stat(label,value,cls) {
+
+  const box = node(
+    "div",
+    undefined,
+    "ggw-stat"
+  );
+
+  box.append(
+    node("small",label,"ggw-muted"),
+    node("strong",value,cls)
+  );
+
+  return box;
+
+}
+
+function summary(list) {
+
+  const purchase = list.reduce(
+    (s,t)=>s+Number(t.stake || 0),0
+  );
+
+  const payout = list.reduce(
+    (s,t)=>s+(t.settled
+      ? Number(t.payout || 0):0),0
+  );
+
+  const settledStake = list.reduce(
+    (s,t)=>s+(t.settled
+      ? Number(t.stake || 0):0),0
+  );
+
+  const profit = payout-settledStake;
+
+  const grid = node(
+    "div",
+    undefined,
+    "ggw-summary"
+  );
+
+  grid.append(
+
+    stat("購入ポイント",fmt(purchase)+" pt"),
+
+    stat("払戻ポイント",fmt(payout)+" pt"),
+
+    stat(
+      "確定収支",
+      (profit>0?"+":"")+fmt(profit)+" pt",
+      profit<0?"ggw-loss":"ggw-profit"
+    ),
+
+    stat(
+      "未確定投票",
+      fmt(purchase-settledStake)+" pt"
+    )
+
+  );
+
+  return grid;
+
+}
+
+function ticketCard(t,showName) {
+
+  const card = node(
+    "div",
+    undefined,
+    "ggw-ticket-card"
+  );
+
+  if(showName) {
+
+    card.append(
+      node("strong",playerName(t.uid))
+    );
+
+  }
+
+  card.append(
+
+    node("div",t.key,"ggw-ticket-key"),
+
+    node("p","購入："+fmt(t.stake)+" pt"),
+
+    node(
+      "p",
+      "オッズ："+Number(
+        t.finalOdds ?? t.odds ?? 0
+      ).toFixed(1)+"倍"
+    )
+
+  );
+
+  if(t.settled) {
+
+    const profit =
+      Number(t.payout || 0)-Number(t.stake);
+
+    card.append(
+
+      node(
+        "p",
+        "払戻："+fmt(t.payout)+" pt"
+      ),
+
+      node(
+        "p",
+        "収支："+
+        (profit>0?"+":"")+
+        fmt(profit)+" pt",
+        profit<0?"ggw-loss":"ggw-profit"
+      )
+
+    );
+
+  } else {
+
+    card.append(
+      node("p","結果待ち","ggw-muted")
+    );
+
+  }
+
+  return card;
+
+}
+
+function renderHistory(area,list,admin) {
+
+  if(!area) return;
+
+  area.replaceChildren();
+
+  if(!list.length) {
+
+    area.textContent = "投票履歴はありません";
+
+    return;
+
+  }
+
+  const groups = new Map();
+
+  list.forEach(t=>{
+
+    const key = t.round || "unknown";
+
+    if(!groups.has(key)) {
+      groups.set(key,[]);
+    }
+
+    groups.get(key).push(t);
+
+  });
+
+  const ordered = [...groups.entries()];
+
+  ordered.sort((a,b)=>
+    Number(b[0]===race.round)-
+    Number(a[0]===race.round)
+  );
+
+  for(const [round,records] of ordered) {
+
+    const box = node(
+      "div",
+      undefined,
+      "ggw-race-card"
+    );
+
+    box.append(
+
+      node("h3",raceName(round)),
+
+      node(
+        "p",
+        records.length+"件の投票",
+        "ggw-muted"
+      ),
+
+      summary(records)
+
+    );
+
+    if(admin) {
+
+      const players = new Map();
+
+      records.forEach(t=>{
+
+        if(!players.has(t.uid)) {
+          players.set(t.uid,[]);
+        }
+
+        players.get(t.uid).push(t);
+
+      });
+
+      const details = node("details");
+
+      details.append(
+        node("summary","参加者別の収支")
+      );
+
+      for(const [uid,items] of players) {
+
+        const card = node(
+          "div",
+          undefined,
+          "ggw-ticket-card"
+        );
+
+        card.append(
+          node("strong",playerName(uid)),
+          summary(items)
+        );
+
+        details.append(card);
+
+      }
+
+      box.append(details);
+
+    }
+
+    const detail = node("details");
+
+    detail.open = round === race.round;
+
+    detail.append(
+      node("summary","投票明細を見る")
+    );
+
+    records.forEach(t=>{
+
+      detail.append(ticketCard(t,admin));
+
+    });
+
+    box.append(detail);
+
+    area.append(box);
+
+  }
+
+}
+
+function renderAll() {
+
+  const user = auth.currentUser;
+
+  renderOdds();
+
+  if(!user) return;
+
+  renderHistory(
+    el("history"),
+    tickets.filter(t=>t.uid===user.uid),
+    false
+  );
+
+  if(user.uid===ADMIN) {
+
+    renderHistory(
+      el("auditView"),
+      tickets,
+      true
+    );
+
+  }
+
+}
+
+onSnapshot(
+
+  doc(db,"races","current"),
+
+  snap=>{
+
+    race = snap.data() || {};
+
+    if(race.round) {
+
+      raceNames.set(
+        race.round,
+        raceName(race.round)
+      );
+
+    }
+
+    setTimeout(renderAll,50);
+
+  }
+
+);
+
+onAuthStateChanged(auth,user=>{
+
+  stops.forEach(stop=>stop());
+
+  stops = [];
+
+  tickets = [];
+
+  names.clear();
+
+  if(el("auditView")) {
+    el("auditView").replaceChildren();
+  }
+
+  if(!user) return;
+
+  const admin = user.uid===ADMIN;
+
+  const ticketQuery = admin
+
+    ? collection(db,"tickets")
+
+    : query(
+        collection(db,"tickets"),
+        where("uid","==",user.uid)
+      );
+
+  stops.push(
+
+    onSnapshot(
+
+      ticketQuery,
+
+      snap=>{
+
+        tickets = snap.docs.map(d=>d.data());
+
+        setTimeout(renderAll,50);
+
+      },
+
+      error=>{
+
+        const area = admin
+          ? el("auditView")
+          : el("history");
+
+        if(area) {
+
+          area.textContent =
+            "取得エラー："+error.message;
+
+        }
+
+      }
+
+    )
+
+  );
+
+  stops.push(
+
+    onSnapshot(
+
+      collection(db,"profiles"),
+
+      snap=>{
+
+        names = new Map(
+          snap.docs.map(d=>[
+            d.id,
+            d.data().nickname
+          ])
+        );
+
+        setTimeout(renderAll,50);
+
+      }
+
+    )
+
+  );
+
+});
+
+if(el("auditRefresh")) {
+
+  el("auditRefresh").onclick = async()=>{
+
+    if(auth.currentUser?.uid!==ADMIN) return;
+
+    try {
+
+      const snap = await getDocs(
+        collection(db,"tickets")
+      );
+
+      tickets = snap.docs.map(d=>d.data());
+
+      renderAll();
+
+    } catch(e) {
+
+      el("auditView").textContent = e.message;
+
+    }
+
+  };
+
+}
+
+</script>
 </body>
 </html>

@@ -4136,5 +4136,696 @@ onAuthStateChanged(auth,user=>{
 
 });
 
+</script><style id="ggw-premium-v5">
+
+:root {
+  --gold:#f5cf65;
+  --bg:#090e17;
+  --card:#151e2c;
+  --border:#39475b;
+  --muted:#a2afc1;
+}
+
+body {
+  background:#090e17 !important;
+  max-width:720px !important;
+  padding:16px 12px 180px !important;
+  color:#f5f7fa;
+}
+
+body > h1 {
+  font-size:25px;
+  letter-spacing:1px;
+  text-shadow:none;
+  margin:20px 0 6px;
+}
+
+body > p {
+  color:var(--muted);
+  font-size:12px;
+  letter-spacing:2px;
+  margin-bottom:24px;
+}
+
+section {
+  background:var(--card) !important;
+  border:1px solid var(--border) !important;
+  border-radius:18px !important;
+  padding:16px !important;
+  margin-bottom:18px !important;
+  box-shadow:0 6px 20px #0004;
+}
+
+section > h2 {
+  border-left:4px solid var(--gold);
+  padding:4px 10px;
+  text-align:left;
+  margin:0 0 18px;
+  font-size:18px;
+}
+
+#userArea {
+  border:2px solid #c6a04a !important;
+  background:linear-gradient(
+    145deg,#252b36,#101722
+  ) !important;
+  text-align:center;
+}
+
+#points {
+  font-size:38px !important;
+  font-weight:900;
+  padding:18px 6px;
+  margin:12px 0;
+  border:1px solid #a68b47;
+  border-radius:14px;
+  background:#090e17;
+  color:var(--gold);
+  font-variant-numeric:tabular-nums;
+}
+
+#role {
+  position:static !important;
+  display:inline-block;
+  padding:5px 15px;
+  border:1px solid #8a713d;
+  border-radius:30px;
+}
+
+#logout {
+  width:auto !important;
+  min-height:34px;
+  padding:6px 15px;
+  background:#283447 !important;
+  color:white !important;
+}
+
+button {
+  min-height:44px;
+  border-radius:10px !important;
+  font-weight:800;
+  box-shadow:none;
+}
+
+input,select {
+  background:#0a111c !important;
+  border:1px solid #435168 !important;
+  border-radius:9px !important;
+  color:white;
+}
+
+label {
+  color:#cbd5e1;
+  font-size:13px;
+  margin:6px 0;
+}
+
+#raceTitle {
+  font-size:23px;
+  padding:14px;
+  border:1px solid #a68b47;
+  background:#0b121e;
+  border-radius:12px;
+  color:var(--gold);
+}
+
+#status {
+  font-weight:900;
+  font-size:16px;
+  padding:10px;
+  border-radius:10px;
+  background:#283447;
+}
+
+#status[data-state="受付中"] {
+  background:#103a2a;
+  color:#80efac;
+  border:1px solid #36a76c;
+}
+
+#status[data-state="締切"] {
+  background:#401c24;
+  color:#ff9696;
+  border:1px solid #b34a54;
+}
+
+#status[data-state="確定"] {
+  background:#3b3018;
+  color:#ffe49a;
+  border:1px solid #a68b47;
+}
+
+#boats {
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:8px !important;
+  margin:16px 0;
+}
+
+#boats .boat {
+  padding:14px !important;
+  font-size:15px;
+  font-weight:800;
+  border-radius:9px !important;
+  border:1px solid #ffffff22;
+}
+
+#resultView:not(:empty) {
+  padding:16px;
+  background:#302819;
+  border:2px solid var(--gold);
+  border-radius:12px;
+  font-size:23px;
+  color:var(--gold);
+  font-weight:900;
+}
+
+details {
+  background:#101824;
+  border:1px solid #3b495e;
+  border-radius:12px;
+  margin:12px 0 !important;
+  padding:0 !important;
+  overflow:hidden;
+}
+
+summary {
+  cursor:pointer;
+  padding:16px 12px !important;
+  font-size:15px;
+  font-weight:800;
+  color:var(--gold);
+  background:#202b3c;
+  text-align:left;
+}
+
+details[open] > summary {
+  border-bottom:1px solid #435168;
+  margin-bottom:10px;
+}
+
+details > :not(summary) {
+  margin-left:10px;
+  margin-right:10px;
+}
+
+#choices {
+  padding:12px;
+  border:1px solid #435168;
+  border-radius:12px;
+  background:#0a111c;
+}
+
+#choices > div {
+  padding:10px 0;
+  border-bottom:1px solid #29374a;
+}
+
+#choices label {
+  min-width:32px;
+  justify-content:center;
+  padding:6px 3px;
+  border-radius:6px;
+  background:#263247;
+  color:white;
+}
+
+#choices input {
+  accent-color:#f5cf65;
+}
+
+#total {
+  background:#2b261a;
+  border:1px solid #a68b47;
+  border-radius:12px;
+  color:var(--gold);
+  font-size:19px;
+  font-weight:900;
+  padding:16px;
+}
+
+#submitTicket {
+  min-height:54px;
+  font-size:17px;
+}
+
+#transferPanel {
+  border:1px solid #435168 !important;
+  background:#101824 !important;
+  padding:12px !important;
+}
+
+.ggw-v5-panel {
+  margin:16px 0;
+  padding:12px;
+  border:1px solid #435168;
+  border-radius:14px;
+  background:#101824;
+  text-align:left;
+}
+
+.ggw-v5-panel > h3 {
+  color:var(--gold);
+  border-left:3px solid var(--gold);
+  padding-left:10px;
+  margin:4px 0 16px;
+}
+
+.ggw-odds-grid {
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:10px !important;
+}
+
+.ggw-odds-card {
+  background:#0b121e !important;
+  border:1px solid #435168 !important;
+  border-radius:12px !important;
+  overflow:hidden;
+}
+
+.ggw-odds-head {
+  padding:12px 6px !important;
+  font-size:14px;
+  font-weight:900;
+}
+
+.ggw-odds-row {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:5px;
+  padding:11px 7px !important;
+  border-bottom:1px solid #263247;
+  font-size:12px;
+}
+
+.ggw-odds-row strong {
+  color:var(--gold);
+  font-size:13px;
+  font-variant-numeric:tabular-nums;
+}
+
+.ggw-race-card {
+  border:1px solid #a68b47 !important;
+  border-radius:15px !important;
+  background:#101824 !important;
+  padding:12px !important;
+  margin:14px 0 !important;
+}
+
+.ggw-race-card > h3 {
+  padding:12px;
+  background:#293244;
+  border-radius:9px;
+  color:var(--gold);
+  font-size:17px;
+}
+
+.ggw-summary,
+.ggw-profile-grid {
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:8px !important;
+}
+
+.ggw-stat,
+.ggw-profile-stat {
+  border:1px solid #354052 !important;
+  background:#090f19 !important;
+  border-radius:10px !important;
+  padding:12px 8px !important;
+  min-width:0;
+}
+
+.ggw-stat strong,
+.ggw-profile-stat strong {
+  display:block;
+  margin-top:8px;
+  font-size:17px !important;
+  overflow-wrap:anywhere;
+}
+
+.ggw-ticket-card {
+  background:#1b2636 !important;
+  border:1px solid #435168 !important;
+  border-radius:12px !important;
+  padding:14px !important;
+  margin:10px 0 !important;
+  text-align:left;
+}
+
+.ggw-ticket-key {
+  font-size:23px !important;
+  color:var(--gold);
+  font-weight:900;
+  margin:10px 0;
+}
+
+.ggw-profit {
+  color:#65e5a0 !important;
+}
+
+.ggw-loss {
+  color:#ff8080 !important;
+}
+
+.ggw-muted {
+  color:#a2afc1 !important;
+}
+
+.ggw-profile-card {
+  border:1px solid #435168 !important;
+  background:#101824 !important;
+  border-radius:14px !important;
+}
+
+.ggw-profile-title {
+  font-size:25px !important;
+  color:var(--gold);
+}
+
+.ggw-profile-rank {
+  text-align:left;
+  padding:14px !important;
+  background:#1b2636 !important;
+  border:1px solid #435168 !important;
+  color:white !important;
+}
+
+#ggwPrizeRanking > button:nth-child(1) {
+  border:2px solid #d9b54b !important;
+  color:#ffe49a !important;
+}
+
+#ggwPrizeRanking > button:nth-child(2) {
+  border-color:#b9c5d4 !important;
+}
+
+#ggwPrizeRanking > button:nth-child(3) {
+  border-color:#b77c4d !important;
+}
+
+#open {
+  background:#187849 !important;
+  color:white !important;
+}
+
+#close {
+  background:#a63240 !important;
+  color:white !important;
+}
+
+#reset {
+  background:#344156 !important;
+  color:white !important;
+}
+
+#finish,#ggwSaveResult {
+  background:linear-gradient(
+    135deg,#ffe49a,#c89b36
+  ) !important;
+  color:#111827 !important;
+}
+
+#adminMessage,
+#playMessage,
+#ggwResultMessage,
+#transferMessage {
+  overflow-wrap:anywhere;
+  line-height:1.6;
+}
+
+#adminMessage:not(:empty),
+#playMessage:not(:empty),
+#ggwResultMessage:not(:empty) {
+  background:#0a111c;
+  border:1px solid #435168;
+  border-radius:10px;
+  padding:12px;
+}
+
+#bottomNav {
+  left:12px !important;
+  right:12px !important;
+  max-width:696px;
+  margin:auto;
+  background:#101824 !important;
+  border:1px solid #a68b47 !important;
+  border-radius:16px !important;
+  padding:8px !important;
+  box-shadow:0 8px 30px #0009;
+}
+
+#bottomNav button {
+  font-size:12px !important;
+  min-height:48px;
+}
+
+@media(max-width:360px) {
+  .ggw-odds-grid {
+    grid-template-columns:1fr !important;
+  }
+
+  #points {
+    font-size:30px !important;
+  }
+}
+
+</style>
+
+<script>
+
+(() => {
+
+  const el = id =>
+    document.getElementById(id);
+
+  function collapsePanel(panel,title) {
+
+    if(!panel) return;
+
+    if(panel.dataset.v5Wrapped) return;
+
+    panel.dataset.v5Wrapped = "true";
+
+    const detail =
+      document.createElement("details");
+
+    const summary =
+      document.createElement("summary");
+
+    summary.textContent = title;
+
+    panel.before(detail);
+
+    detail.append(summary,panel);
+
+  }
+
+  function collapseContent(id,title) {
+
+    const content = el(id);
+
+    if(!content) return;
+
+    if(content.dataset.v5Wrapped) return;
+
+    content.dataset.v5Wrapped = "true";
+
+    const previous =
+      content.previousElementSibling;
+
+    if(previous &&
+       previous.tagName === "H3") {
+
+      previous.hidden = true;
+
+    }
+
+    const detail =
+      document.createElement("details");
+
+    const summary =
+      document.createElement("summary");
+
+    summary.textContent = title;
+
+    content.before(detail);
+
+    detail.append(summary,content);
+
+  }
+
+  function groupRange(start,end,title,opened) {
+
+    if(!start || !end) return;
+
+    if(start.parentNode !== end.parentNode) {
+      return;
+    }
+
+    if(start.dataset.v5Grouped) return;
+
+    const items = [];
+
+    let current = start;
+
+    while(current) {
+
+      items.push(current);
+
+      if(current === end) break;
+
+      current = current.nextElementSibling;
+
+    }
+
+    if(items[items.length-1] !== end) {
+      return;
+    }
+
+    start.dataset.v5Grouped = "true";
+
+    const detail =
+      document.createElement("details");
+
+    detail.open = opened;
+
+    const summary =
+      document.createElement("summary");
+
+    summary.textContent = title;
+
+    const panel =
+      document.createElement("div");
+
+    panel.className = "ggw-v5-panel";
+
+    start.before(detail);
+
+    detail.append(summary,panel);
+
+    items.forEach(item => panel.append(item));
+
+  }
+
+  function setup() {
+
+    collapsePanel(
+      el("transferPanel"),
+      "💸 ポイント譲渡・名前設定"
+    );
+
+    const profile =
+      el("ggwPlayerSelect")
+      ?.closest(".ggw-profile-card");
+
+    collapsePanel(
+      profile,
+      "👤 選手プロフィール・賞金ランキング"
+    );
+
+    collapseContent(
+      "history",
+      "🎫 レース別投票履歴"
+    );
+
+    collapseContent(
+      "ranking",
+      "🏆 ポイントランキング"
+    );
+
+    const admin = el("adminArea");
+
+    if(admin) {
+
+      const headings =
+        Array.from(admin.children)
+        .filter(x=>x.tagName==="H3");
+
+      const raceHeading =
+        headings.find(x=>
+          x.textContent.trim()==="レース管理"
+        );
+
+      const resultHeading =
+        headings.find(x=>
+          x.textContent.trim()==="レース結果"
+        );
+
+      groupRange(
+        raceHeading,
+        el("retryOdds") || el("close"),
+        "🚤 レース設定・受付管理",
+        true
+      );
+
+      groupRange(
+        resultHeading,
+        el("reset"),
+        "🏁 結果登録・払戻処理",
+        false
+      );
+
+    }
+
+    const resultPanel =
+      el("ggwSaveResult")
+      ?.closest(".ggw-profile-card");
+
+    collapsePanel(
+      resultPanel,
+      "🏆 選手成績・賞金登録"
+    );
+
+    const status = el("status");
+
+    if(status) {
+
+      const value =
+        status.textContent.trim();
+
+      if(status.dataset.state !== value) {
+
+        status.dataset.state = value;
+
+      }
+
+    }
+
+  }
+
+  window.addEventListener("load",setup);
+
+  let scheduled = false;
+
+  const observer =
+    new MutationObserver(() => {
+
+      if(scheduled) return;
+
+      scheduled = true;
+
+      requestAnimationFrame(() => {
+
+        scheduled = false;
+
+        setup();
+
+      });
+
+    });
+
+  observer.observe(document.body,{
+    childList:true,
+    subtree:true,
+    characterData:true
+  });
+
+  setup();
+
+})();
+
 </script></body>
 </html>

@@ -3968,27 +3968,65 @@ el("ggwSaveResult").onclick = async()=>{
 
     await runTransaction(db,async t=>{
 
-      const old = await t.get(ref);
+  const old = await t.get(ref);
 
-      if(old.exists()){
+  if(old.exists()){
+    throw Error(
+      "このレースは既に登録済みです"
+    );
+  }
 
-        throw Error(
-          "このレースは既に登録済みです"
-        );
+  const accounts = [];
 
-      }
+  for(const player of finishers){
 
-      t.set(ref,{
+    const userRef = doc(
+      db,"users",player.uid
+    );
 
-        name,
-        grade,
-        isFinal,
-        finishers,
-        createdAt:serverTimestamp()
+    const snapshot = await t.get(userRef);
 
-      });
+    if(!snapshot.exists()){
+      throw Error("選手のアカウントがありません");
+    }
 
+    const points = snapshot.data().points;
+
+    if(!Number.isSafeInteger(points)){
+      throw Error("所持ポイントが不正です");
+    }
+
+    const total = points + player.prize;
+
+    if(!Number.isSafeInteger(total)){
+      throw Error("ポイント上限エラー");
+    }
+
+    accounts.push({
+      ref:userRef,
+      points:total
     });
+
+  }
+
+  for(const account of accounts){
+
+    t.update(account.ref,{
+      points:account.points
+    });
+
+  }
+
+  t.set(ref,{
+    name,
+    grade,
+    isFinal,
+    finishers,
+    prizePaid:true,
+    createdAt:serverTimestamp()
+  });
+
+});
 
     message.textContent =
       "🏆 選手成績の登録完了！";

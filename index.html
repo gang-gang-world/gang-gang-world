@@ -1591,5 +1591,238 @@ async () => {
     alert("IDを選択しました。手動でコピーしてください。");
   }
 };
+</script><script type="module">
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  collection,
+  runTransaction,
+  serverTimestamp,
+  query,
+  where,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+const auth = getAuth();
+const db = getFirestore();
+
+const el = id => document.getElementById(id);
+
+const adminUID =
+  "w3ZZn1g16fT9wfep9rkMzt7VrPt2";
+
+let sending = false;
+
+async function loadTransfers() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const area = el("transferHistory");
+  area.textContent = "取得中...";
+
+  try {
+    const ref = collection(db, "transfers");
+
+    let records;
+
+    if (user.uid === adminUID) {
+      const all = await getDocs(ref);
+      records = all.docs;
+    } else {
+      const [sent, received] = await Promise.all([
+        getDocs(query(ref,
+          where("from", "==", user.uid))),
+        getDocs(query(ref,
+          where("to", "==", user.uid)))
+      ]);
+
+      records = [...sent.docs, ...received.docs];
+    }
+
+    if (auth.currentUser?.uid !== user.uid) return;
+
+    records.sort((a, b) =>
+      (b.data().createdAt?.seconds || 0) -
+      (a.data().createdAt?.seconds || 0)
+    );
+
+    area.replaceChildren();
+
+    if (!records.length) {
+      area.textContent = "譲渡履歴はありません";
+      return;
+    }
+
+    records.forEach(record => {
+      const t = record.data();
+
+      const line = document.createElement("div");
+
+      line.style.cssText = `
+        padding:12px;
+        margin:8px 0;
+        background:#171e2c;
+        border-radius:10px;
+        overflow-wrap:anywhere;
+      `;
+
+      const title = document.createElement("strong");
+
+      if (t.from === user.uid) {
+        title.textContent =
+          "送信 −" + t.amount.toLocaleString() + " pt";
+        title.style.color = "#ff7777";
+      } else if (t.to === user.uid) {
+        title.textContent =
+          "受取 ＋" + t.amount.toLocaleString() + " pt";
+        title.style.color = "#65cf86";
+      } else {
+        title.textContent =
+          "譲渡 " + t.amount.toLocaleString() + " pt";
+      }
+
+      const info = document.createElement("p");
+
+      info.textContent =
+        t.from + " → " + t.to;
+
+      info.style.fontSize = "11px";
+
+      const date = document.createElement("small");
+
+      date.textContent =
+        t.createdAt?.toDate().toLocaleString("ja-JP") || "";
+
+      line.append(title, info, date);
+      area.append(line);
+    });
+
+  } catch (e) {
+    area.textContent = "履歴取得エラー：" + e.message;
+  }
+}
+
+const refresh = document.createElement("button");
+
+refresh.textContent = "譲渡履歴を更新";
+refresh.onclick = loadTransfers;
+
+el("transferHistory").before(refresh);
+
+onAuthStateChanged(auth, user => {
+  el("sendTransfer").disabled = !user || sending;
+  el("transferHistory").replaceChildren();
+  el("transferTo").value = "";
+  el("transferAmount").value = "";
+
+  if (user) loadTransfers();
+});
+
+el("sendTransfer").onclick = async () => {
+
+  const user = auth.currentUser;
+
+  if (!user || sending) return;
+
+  const to = el("transferTo").value.trim();
+  const amount = Number(el("transferAmount").value);
+  const message = el("transferMessage");
+
+  if (!to || to.includes("/")) {
+    message.textContent = "相手のIDを確認してください";
+    return;
+  }
+
+  if (to === user.uid) {
+    message.textContent = "自分には送信できません";
+    return;
+  }
+
+  if (!Number.isSafeInteger(amount) || amount < 100) {
+    message.textContent = "最低100ptから送信できます";
+    return;
+  }
+
+  if (!confirm(
+    "送信先：" + to + "\n" +
+    amount.toLocaleString() +
+    " ptを送信しますか？"
+  )) return;
+
+  sending = true;
+  el("sendTransfer").disabled = true;
+  message.textContent = "送信処理中...";
+
+  try {
+
+    const sender = doc(db, "users", user.uid);
+    const receiver = doc(db, "users", to);
+
+    const transfer = doc(collection(db, "transfers"));
+
+    await runTransaction(db, async t => {
+
+      const s = await t.get(sender);
+      const r = await t.get(receiver);
+
+      if (!s.exists() || !r.exists()) {
+        throw Error("プレイヤーが存在しません");
+      }
+
+      const balance = s.data().points;
+      const receiveBalance = r.data().points;
+
+      if (!Number.isSafeInteger(balance) ||
+          !Number.isSafeInteger(receiveBalance)) {
+        throw Error("残高エラー");
+      }
+
+      if (balance < amount) {
+        throw Error("ポイントが不足しています");
+      }
+
+      if (!Number.isSafeInteger(receiveBalance + amount)) {
+        throw Error("受取残高の上限エラー");
+      }
+
+      t.update(sender, {
+        points: balance - amount,
+        lastTransfer: transfer.id
+      });
+
+      t.update(receiver, {
+        points: receiveBalance + amount,
+        lastTransfer: transfer.id
+      });
+
+      t.set(transfer, {
+        from: user.uid,
+        to: to,
+        amount: amount,
+        createdAt: serverTimestamp()
+      });
+
+    });
+
+    message.textContent =
+      amount.toLocaleString() + " ptの送信完了！";
+
+    el("transferAmount").value = "";
+    el("transferTo").value = "";
+
+    await loadTransfers();
+
+  } catch (e) {
+    message.textContent = "送信失敗：" + e.message;
+  } finally {
+    sending = false;
+    el("sendTransfer").disabled = !auth.currentUser;
+  }
+};
 </script></body>
 </html>

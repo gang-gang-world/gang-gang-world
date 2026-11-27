@@ -3445,5 +3445,658 @@ if(el("auditRefresh")) {
 }
 
 </script>
-</body>
+<script type="module">
+
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  collection,
+  doc,
+  onSnapshot,
+  runTransaction,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+const auth = getAuth();
+const db = getFirestore();
+
+const ADMIN =
+"w3ZZn1g16fT9wfep9rkMzt7VrPt2";
+
+const el = id => document.getElementById(id);
+
+let players = [];
+let records = [];
+let stops = [];
+
+const style = document.createElement("style");
+
+style.textContent = `
+.ggw-profile-card {
+  background:linear-gradient(145deg,#202b3c,#101722);
+  border:1px solid #a88a43;
+  border-radius:15px;
+  padding:15px;
+  margin:12px 0;
+  overflow-wrap:anywhere;
+}
+.ggw-profile-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.ggw-profile-stat {
+  background:#0d1420;
+  border:1px solid #354052;
+  border-radius:10px;
+  padding:12px;
+}
+.ggw-profile-stat strong {
+  display:block;
+  color:#f5cf65;
+  font-size:23px;
+  margin-top:6px;
+}
+.ggw-profile-title {
+  color:#f5cf65;
+  font-size:22px;
+  font-weight:900;
+}
+.ggw-profile-rank {
+  border:1px solid #354052;
+  border-radius:10px;
+  padding:12px;
+  margin:6px 0;
+  background:#171e2c;
+  color:white;
+}
+`;
+
+document.head.append(style);
+
+const panel = document.createElement("div");
+
+panel.className = "ggw-profile-card";
+
+panel.innerHTML = `
+<h2>👤 選手プロフィール</h2>
+<select id="ggwPlayerSelect"></select>
+<button id="ggwShowProfile">プロフィールを見る</button>
+<div id="ggwProfileView"></div>
+<h3>🏆 賞金ランキング</h3>
+<div id="ggwPrizeRanking"></div>
+`;
+
+el("userArea").append(panel);
+
+const adminPanel = document.createElement("div");
+
+adminPanel.className = "ggw-profile-card";
+
+adminPanel.innerHTML = `
+<h2>🏆 選手成績登録</h2>
+
+<label>レース名
+<input id="ggwRaceName"
+placeholder="ギャンギャン杯">
+</label>
+
+<label>レースグレード
+<select id="ggwGrade">
+<option>SG</option>
+<option>G1</option>
+<option>G2</option>
+<option>G3</option>
+<option>一般戦</option>
+</select>
+</label>
+
+<label>レース識別番号
+<input id="ggwRaceID"
+placeholder="例：20261127-12R">
+</label>
+
+<label>
+<input type="checkbox"
+id="ggwFinal"
+style="width:auto">
+優勝戦
+</label>
+
+<div id="ggwFinishers"></div>
+
+<button id="ggwSaveResult">
+選手成績を確定
+</button>
+
+<p id="ggwResultMessage"></p>
+`;
+
+el("adminArea").append(adminPanel);
+
+for(let n=1;n<=6;n++){
+
+  const row = document.createElement("div");
+
+  row.className = "ggw-profile-card";
+
+  row.innerHTML = `
+  <h3>${n}着</h3>
+  <select id="ggwRacer${n}"></select>
+  <label>獲得賞金ポイント（記録用）
+  <input id="ggwPrize${n}"
+  type="number"
+  min="0"
+  step="100"
+  value="0">
+  </label>
+  `;
+
+  el("ggwFinishers").append(row);
+}
+
+function number(n){
+  return n.toLocaleString("ja-JP");
+}
+
+function fillPlayers(){
+
+  const ids = [
+    "ggwPlayerSelect",
+    ...Array.from(
+      {length:6},
+      (_,i)=>"ggwRacer"+(i+1)
+    )
+  ];
+
+  ids.forEach(id=>{
+
+    const select = el(id);
+    const old = select.value;
+
+    select.replaceChildren();
+
+    const empty = document.createElement("option");
+
+    empty.value = "";
+    empty.textContent = "選手を選択";
+
+    select.append(empty);
+
+    players.forEach(p=>{
+
+      const option =
+      document.createElement("option");
+
+      option.value = p.uid;
+      option.textContent = p.name;
+
+      select.append(option);
+
+    });
+
+    if(players.some(p=>p.uid===old)){
+      select.value=old;
+    }
+
+  });
+
+}
+
+function stats(uid){
+
+  const result = {
+    starts:0,
+    first:0,
+    second:0,
+    third:0,
+    wins:0,
+    sg:0,
+    prize:0,
+    recent:[]
+  };
+
+  records.forEach(r=>{
+
+    const index = r.finishers.findIndex(
+      p=>p.uid===uid
+    );
+
+    if(index===-1)return;
+
+    result.starts++;
+
+    if(index===0)result.first++;
+    if(index===1)result.second++;
+    if(index===2)result.third++;
+
+    if(index===0 && r.isFinal){
+
+      result.wins++;
+
+      if(r.grade==="SG"){
+        result.sg++;
+      }
+
+    }
+
+    result.prize +=
+      r.finishers[index].prize;
+
+    result.recent.push(index+1);
+
+  });
+
+  return result;
+
+}
+
+function rate(n,total){
+
+  return total
+    ? (n/total*100).toFixed(1)+"%"
+    : "0.0%";
+
+}
+
+function title(s){
+
+  if(s.wins>=10)
+    return "👑 絶対王者";
+
+  if(s.sg>=1)
+    return "🏆 SG覇者";
+
+  if(s.wins>=5)
+    return "💎 ギャンギャンの猛者";
+
+  if(s.wins>=1)
+    return "⚡ 期待の新星";
+
+  if(s.starts>=30)
+    return "🔥 ベテランレーサー";
+
+  return "🔰 新人レーサー";
+
+}
+
+function showProfile(uid){
+
+  const p = players.find(
+    x=>x.uid===uid
+  );
+
+  const area = el("ggwProfileView");
+
+  area.replaceChildren();
+
+  if(!p){
+
+    area.textContent =
+      "選手を選択してください";
+
+    return;
+
+  }
+
+  const s = stats(uid);
+
+  const card = document.createElement("div");
+
+  card.className = "ggw-profile-card";
+
+  const name = document.createElement("div");
+
+  name.className = "ggw-profile-title";
+  name.textContent = p.name;
+
+  const rank = document.createElement("p");
+
+  rank.textContent = title(s);
+  rank.style.color = "#f5cf65";
+
+  card.append(name,rank);
+
+  const grid = document.createElement("div");
+
+  grid.className = "ggw-profile-grid";
+
+  const values = [
+
+    ["通算出走",s.starts+"回"],
+
+    ["1着回数",s.first+"回"],
+
+    ["1着率",rate(s.first,s.starts)],
+
+    ["2連対率",
+      rate(s.first+s.second,s.starts)],
+
+    ["3連対率",
+      rate(s.first+s.second+s.third,s.starts)],
+
+    ["優勝回数",s.wins+"回"],
+
+    ["SG優勝",s.sg+"回"],
+
+    ["獲得賞金",number(s.prize)+"pt"]
+
+  ];
+
+  values.forEach(([label,value])=>{
+
+    const box = document.createElement("div");
+
+    box.className = "ggw-profile-stat";
+
+    box.textContent = label;
+
+    const strong =
+      document.createElement("strong");
+
+    strong.textContent = value;
+
+    box.append(strong);
+    grid.append(box);
+
+  });
+
+  card.append(grid);
+
+  const recent = document.createElement("p");
+
+  recent.textContent =
+    "最近10走："+
+    (
+      s.recent.slice(0,10)
+      .map(n=>n+"着")
+      .join(" / ")
+      || "記録なし"
+    );
+
+  card.append(recent);
+
+  area.append(card);
+
+}
+
+function ranking(){
+
+  const area = el("ggwPrizeRanking");
+
+  area.replaceChildren();
+
+  const list = players.map(p=>({
+
+    ...p,
+    ...stats(p.uid)
+
+  })).sort((a,b)=>b.prize-a.prize);
+
+  list.forEach((p,i)=>{
+
+    const button =
+      document.createElement("button");
+
+    button.className = "ggw-profile-rank";
+
+    const medal =
+      ["🥇","🥈","🥉"][i] || (i+1)+"位";
+
+    button.textContent =
+      medal+" "+p.name+
+      " / "+number(p.prize)+"pt";
+
+    button.onclick = ()=>{
+
+      el("ggwPlayerSelect").value = p.uid;
+
+      showProfile(p.uid);
+
+      el("ggwProfileView").scrollIntoView({
+        behavior:"smooth",
+        block:"center"
+      });
+
+    };
+
+    area.append(button);
+
+  });
+
+}
+
+el("ggwShowProfile").onclick = ()=>{
+
+  showProfile(
+    el("ggwPlayerSelect").value
+  );
+
+};
+
+el("ggwPlayerSelect").onchange = ()=>{
+
+  showProfile(
+    el("ggwPlayerSelect").value
+  );
+
+};
+
+el("ggwSaveResult").onclick = async()=>{
+
+  if(auth.currentUser?.uid!==ADMIN)return;
+
+  const message = el("ggwResultMessage");
+
+  const button = el("ggwSaveResult");
+
+  const name =
+    el("ggwRaceName").value.trim();
+
+  const grade =
+    el("ggwGrade").value;
+
+  const raceID =
+    el("ggwRaceID").value.trim();
+
+  const isFinal =
+    el("ggwFinal").checked;
+
+  if(!name || !/^[A-Za-z0-9_-]{1,80}$/.test(raceID)){
+
+    message.textContent =
+      "レース名と正しい識別番号を入力してください";
+
+    return;
+
+  }
+
+  const finishers = [];
+
+  for(let n=1;n<=6;n++){
+
+    const uid =
+      el("ggwRacer"+n).value;
+
+    const prize =
+      Number(el("ggwPrize"+n).value);
+
+    if(!uid ||
+       !Number.isSafeInteger(prize) ||
+       prize<0){
+
+      message.textContent =
+        "全選手と賞金を確認してください";
+
+      return;
+
+    }
+
+    finishers.push({
+      uid,
+      place:n,
+      prize
+    });
+
+  }
+
+  if(new Set(
+    finishers.map(p=>p.uid)
+  ).size!==6){
+
+    message.textContent =
+      "同じ選手が重複しています";
+
+    return;
+
+  }
+
+  if(!confirm("選手成績を確定しますか？")){
+    return;
+  }
+
+  button.disabled = true;
+
+  try{
+
+    const ref =
+      doc(db,"racerResults",raceID);
+
+    await runTransaction(db,async t=>{
+
+      const old = await t.get(ref);
+
+      if(old.exists()){
+
+        throw Error(
+          "このレースは既に登録済みです"
+        );
+
+      }
+
+      t.set(ref,{
+
+        name,
+        grade,
+        isFinal,
+        finishers,
+        createdAt:serverTimestamp()
+
+      });
+
+    });
+
+    message.textContent =
+      "🏆 選手成績の登録完了！";
+
+  }catch(e){
+
+    message.textContent =
+      "登録失敗："+e.message;
+
+  }finally{
+
+    button.disabled = false;
+
+  }
+
+};
+
+onAuthStateChanged(auth,user=>{
+
+  stops.forEach(stop=>stop());
+  stops=[];
+
+  players=[];
+  records=[];
+
+  fillPlayers();
+
+  el("ggwProfileView").replaceChildren();
+  el("ggwPrizeRanking").replaceChildren();
+
+  if(!user)return;
+
+  stops.push(
+
+    onSnapshot(
+
+      collection(db,"profiles"),
+
+      snap=>{
+
+        players = snap.docs.map(d=>({
+
+          uid:d.id,
+          name:d.data().nickname
+
+        }));
+
+        fillPlayers();
+
+        if(!el("ggwPlayerSelect").value){
+
+          el("ggwPlayerSelect").value =
+            user.uid;
+
+        }
+
+        showProfile(
+          el("ggwPlayerSelect").value
+        );
+
+        ranking();
+
+      },
+
+      e=>{
+        el("ggwProfileView").textContent =
+          e.message;
+      }
+
+    )
+
+  );
+
+  stops.push(
+
+    onSnapshot(
+
+      collection(db,"racerResults"),
+
+      snap=>{
+
+        records = snap.docs.map(
+          d=>d.data()
+        ).sort((a,b)=>
+
+          (b.createdAt?.seconds||0)-
+          (a.createdAt?.seconds||0)
+
+        );
+
+        showProfile(
+          el("ggwPlayerSelect").value
+        );
+
+        ranking();
+
+      },
+
+      e=>{
+        el("ggwProfileView").textContent =
+          e.message;
+      }
+
+    )
+
+  );
+
+});
+
+</script></body>
 </html>

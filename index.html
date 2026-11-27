@@ -1,363 +1,1100 @@
-/* GANG GANG WORLD PREMIUM DESIGN */
-
-:root {
-  color-scheme: dark;
-  --gold: #f5cf65;
-  --panel: #171e2c;
-  --muted: #9ca9bc;
-}
-
-* {
-  box-sizing: border-box;
-}
-
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ギャンギャンワールド</title>
+<style>
 body {
-  background: linear-gradient(
-    160deg,
-    #090c12,
-    #111827,
-    #090c12
-  );
-  color: #f5f7fa;
-  font-family: -apple-system,
-    BlinkMacSystemFont,
-    "Helvetica Neue", sans-serif;
-  padding: 12px;
-  padding-bottom: 35px;
-  max-width: 650px;
-  margin: auto;
+  background:#101018;
+  color:white;
+  font-family:sans-serif;
+  text-align:center;
+  padding:15px;
+  max-width:650px;
+  margin:auto;
 }
-
-h1 {
-  color: #f5cf65;
-  font-size: 29px;
-  font-weight: 900;
-  letter-spacing: 1px;
-  text-shadow: 0 0 20px #d4af3740;
-  margin-top: 30px;
-  margin-bottom: 8px;
-}
-
-body > p {
-  color: #9ca9bc;
-  font-size: 12px;
-  letter-spacing: 3px;
-  margin-bottom: 30px;
-}
-
+h1,#points {color:gold;}
+#points {font-size:30px;font-weight:bold;}
 section {
-  background: linear-gradient(
-    145deg,
-    #1b2433,
-    #131925
-  );
-  border: 1px solid #303b4e;
-  border-radius: 18px;
-  padding: 18px;
-  margin-bottom: 16px;
-  box-shadow: 0 8px 24px #00000035;
+  background:#222230;
+  padding:20px;
+  border-radius:15px;
+  margin-bottom:15px;
 }
-
-h2 {
-  font-size: 21px;
-  letter-spacing: 1px;
-  border-bottom: 1px solid #344052;
-  padding-bottom: 15px;
-  margin-top: 8px;
+input,button,select {
+  box-sizing:border-box;
+  width:100%;
+  padding:13px;
+  margin:6px 0;
+  border:none;
+  border-radius:8px;
+  font-size:16px;
 }
-
-h3 {
-  color: #f5cf65;
-  font-size: 18px;
-}
-
-#userArea {
-  border: 1px solid #b79548;
-  background: linear-gradient(
-    130deg,
-    #222738,
-    #111722
-  );
-}
-
-#points {
-  font-size: 42px;
-  color: #f5cf65;
-  font-weight: 900;
-  letter-spacing: -1px;
-  text-shadow: 0 0 20px #f5cf6520;
-  margin: 20px 0;
-}
-
-#userName {
-  color: #9ca9bc;
-  font-size: 13px;
-  overflow-wrap: anywhere;
-}
-
-#role {
-  display: inline-block;
-  background: #293449;
-  color: #f5cf65;
-  padding: 6px 15px;
-  border-radius: 30px;
-  font-size: 12px;
-}
-
-input, select {
-  background: #0e1520;
-  color: white;
-  border: 1px solid #3b4659;
-  border-radius: 10px;
-  padding: 14px;
-  font-size: 16px;
-}
-
 button {
-  background: linear-gradient(
-    135deg,
-    #ffe69b,
-    #d4a83e
-  );
-  color: #17130a;
-  border: 1px solid #f5cf65;
-  border-radius: 11px;
-  padding: 15px;
-  font-size: 15px;
-  font-weight: 800;
-  box-shadow: 0 4px 12px #00000025;
+  background:gold;
+  color:black;
+  font-weight:bold;
 }
-
-button:active {
-  transform: scale(.98);
+button:disabled {opacity:.5;}
+[hidden] {display:none!important;}
+.line {
+  display:flex;
+  align-items:center;
+  gap:10px;
 }
-
-button:disabled {
-  opacity: .35;
-}
-
-#logout {
-  background: #242e40;
-  color: #cbd5e1;
-  border: 1px solid #445066;
-  box-shadow: none;
-}
-
-#status {
-  display: inline-block;
-  background: #183d32;
-  color: #6ee7a8;
-  padding: 8px 22px;
-  border-radius: 30px;
-  font-size: 13px;
-  font-weight: bold;
-}
-
-#raceTitle {
-  font-size: 24px;
-  color: white;
-  margin: 12px 0 20px;
-}
-
+.line span {min-width:65px;}
 .boat {
-  text-align: left;
-  padding: 15px;
-  margin: 7px 0;
-  border-radius: 9px;
-  font-size: 16px;
-  box-shadow: 0 3px 8px #00000025;
+  padding:10px;
+  margin:4px;
+  border-radius:5px;
+  color:black;
+  font-weight:bold;
+}
+label {display:block;text-align:left;}
+details {margin:15px 0;}
+#message,#adminMessage,#points {
+  overflow-wrap:anywhere;
+}
+</style>
+</head>
+<body>
+
+<h1>ギャンギャンワールド</h1>
+<p>公式ボートレースゲーム</p>
+
+<section id="loginArea">
+<h2>ログイン・新規登録</h2>
+<input id="email" type="email"
+placeholder="メールアドレス">
+<input id="password" type="password"
+placeholder="パスワード（6文字以上）">
+<button id="login">ログイン</button>
+<button id="register">新規登録</button>
+<p id="message"></p>
+</section>
+
+<section id="userArea" hidden>
+<h2>マイページ</h2>
+<p id="userName"></p>
+<p id="role"></p>
+<p>所持ポイント</p>
+<p id="points">取得中...</p>
+<button id="logout">ログアウト</button>
+</section>
+
+<section>
+<h2>レース情報</h2>
+<p id="status">接続確認中...</p>
+<h3 id="raceTitle"></h3>
+<div id="boats"></div>
+<p id="resultView"></p>
+<details id="publicOdds" hidden>
+<summary>3連単オッズ一覧</summary>
+<div id="oddsView"></div>
+</details>
+</section>
+
+<section id="playArea" hidden>
+<h2>3連単 ポイント投票</h2>
+<p>ゲーム内ポイント専用・換金不可</p>
+
+<select id="mode">
+<option>通常</option>
+<option>ボックス</option>
+<option>フォーメーション</option>
+</select>
+
+<div id="choices"></div>
+
+<label>1点あたりのポイント
+<input id="stake" type="number"
+min="100" step="100" value="100">
+</label>
+
+<p id="total"></p>
+<button id="submitTicket">投票確定</button>
+<p id="playMessage"></p>
+
+<h3>投票履歴</h3>
+<div id="history"></div>
+
+<h3>ポイントランキング</h3>
+<div id="ranking"></div>
+</section>
+
+<section id="adminArea" hidden>
+<h2>管理者メニュー</h2>
+<p>管理者としてログイン中</p>
+
+<h3>レース管理</h3>
+
+<label>レース名
+<input id="raceName" placeholder="優勝戦">
+</label>
+
+<label>開催場
+<input id="venue" placeholder="住之江">
+</label>
+
+<label>レース番号
+<input id="raceNo" type="number"
+min="1" max="12" value="12">
+</label>
+
+<h3>出走選手</h3>
+<div id="boatInputs"></div>
+
+<details>
+<summary>3連単120通りのオッズ設定</summary>
+
+<button id="autoOdds">オッズ自動生成</button>
+
+<input id="bulkOdds" type="number"
+min="1" step="0.1" value="10">
+
+<button id="bulkSet">オッズ一括設定</button>
+
+<p id="oddsMessage"></p>
+<div id="oddsInputs"></div>
+</details>
+
+<button id="save">レース情報を保存</button>
+<button id="open">投票受付開始</button>
+<button id="close">投票締切</button>
+
+<h3>レース結果</h3>
+<div id="resultInputs"></div>
+
+<button id="finish">結果登録</button>
+<button id="settle">未払戻しを処理</button>
+<button id="reset">次のレースを準備</button>
+
+<p id="adminMessage"></p>
+</section>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
+
+import {
+  getFirestore,
+  doc,
+  onSnapshot,
+  runTransaction,
+  collection,
+  query,
+  where,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyBhYaW-hDQcCL6sc8WNqz5glK1xZOJ-YL8",
+  authDomain: "gang-gang-world.firebaseapp.com",
+  projectId: "gang-gang-world",
+  appId: "1:546523018840:web:8ca419709eff43f0d83c2d"
+});
+
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+const adminUID =
+"w3ZZn1g16fT9wfep9rkMzt7VrPt2";
+
+const INITIAL_POINTS = 100000;
+const MIN_BET = 100;
+
+const ref = doc(db,"races","current");
+const el = id => document.getElementById(id);
+
+const nums = [1,2,3,4,5,6];
+const combos = [];
+
+let currentRace = {};
+let busy = false;
+let listStops = [];
+let unsubscribe = null;
+let pointsUnsubscribe = null;
+let authVersion = 0;
+
+for(const a of nums){
+  for(const b of nums){
+    for(const c of nums){
+      if(new Set([a,b,c]).size===3){
+        combos.push(a+"-"+b+"-"+c);
+      }
+    }
+  }
 }
 
-.boat:nth-child(2) {
-  background: #292929 !important;
-  color: white;
+for(const n of nums){
+  const label=document.createElement("label");
+  label.textContent=n+"号艇";
+
+  const input=document.createElement("input");
+  input.id="boat"+n;
+  input.placeholder="選手名";
+
+  label.append(input);
+  el("boatInputs").append(label);
 }
 
-.boat:nth-child(3),
-.boat:nth-child(4),
-.boat:nth-child(6) {
-  color: #101018;
+for(const k of combos){
+  const label=document.createElement("label");
+  label.className="line";
+
+  const span=document.createElement("span");
+  span.textContent=k;
+
+  const input=document.createElement("input");
+  input.id="odd"+k;
+  input.type="number";
+  input.min="1";
+  input.step="0.1";
+  input.placeholder="未設定";
+
+  label.append(span,input);
+  el("oddsInputs").append(label);
 }
 
-details {
-  background: #101722;
-  border: 1px solid #303b4e;
-  border-radius: 12px;
-  padding: 14px;
+for(const n of [1,2,3]){
+  const label=document.createElement("label");
+  label.textContent=n+"着";
+
+  const select=document.createElement("select");
+  select.id="res"+n;
+
+  for(const x of nums){
+    const option=document.createElement("option");
+    option.value=x;
+    option.textContent=x+"号艇";
+    select.append(option);
+  }
+
+  select.value=n;
+  label.append(select);
+  el("resultInputs").append(label);
 }
 
-summary {
-  color: #f5cf65;
-  font-weight: bold;
-  cursor: pointer;
+function showError(e){
+  const errors={
+    "auth/email-already-in-use":
+      "このメールアドレスは登録済みです。",
+    "auth/invalid-email":
+      "メールアドレスを確認してください。",
+    "auth/weak-password":
+      "パスワードは6文字以上にしてください。",
+    "auth/invalid-credential":
+      "メールアドレスかパスワードが違います。"
+  };
+
+  el("message").textContent=
+    errors[e.code]||e.message;
 }
 
-#oddsView {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  margin-top: 15px;
+el("register").onclick=async()=>{
+  try{
+    await createUserWithEmailAndPassword(
+      auth,
+      el("email").value.trim(),
+      el("password").value
+    );
+  }catch(e){
+    showError(e);
+  }
+};
+
+el("login").onclick=async()=>{
+  try{
+    await signInWithEmailAndPassword(
+      auth,
+      el("email").value.trim(),
+      el("password").value
+    );
+  }catch(e){
+    showError(e);
+  }
+};
+
+el("logout").onclick=async()=>{
+  try{
+    await signOut(auth);
+  }catch(e){
+    alert(e.message);
+  }
+};
+
+function fillForm(r){
+  el("raceName").value=r.name||"";
+  el("venue").value=r.venue||"";
+  el("raceNo").value=r.raceNo||12;
+
+  nums.forEach((n,i)=>{
+    el("boat"+n).value=r.boats?.[i]||"";
+  });
+
+  combos.forEach(k=>{
+    el("odd"+k).value=r.odds?.[k]??"";
+  });
+
+  [1,2,3].forEach((n,i)=>{
+    el("res"+n).value=r.result?.[i]||n;
+  });
 }
 
-#oddsView > div {
-  background: #222c3c;
-  border-radius: 6px;
-  padding: 10px 3px;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
+function renderRace(r){
+
+  currentRace=r;
+  updateTotal();
+
+  el("status").textContent=
+    r.status||"レース未登録";
+
+  el("raceTitle").textContent=[
+    r.venue,
+    r.raceNo?r.raceNo+"R":"",
+    r.name
+  ].filter(Boolean).join(" ");
+
+  el("boats").replaceChildren();
+
+  const colors=[
+    "white",
+    "#888888",
+    "#ff5555",
+    "#70aaff",
+    "#ffe65c",
+    "#65cf86"
+  ];
+
+  (r.boats||[]).forEach((name,i)=>{
+    const div=document.createElement("div");
+
+    div.className="boat";
+    div.style.background=colors[i];
+    div.textContent=(i+1)+"号艇 "+name;
+
+    el("boats").append(div);
+  });
+
+  el("resultView").textContent=
+    r.result?"結果："+r.result.join("-"):"";
+
+  el("oddsView").replaceChildren();
+
+  for(const k of combos){
+    if(r.odds?.[k]!=null){
+      const div=document.createElement("div");
+
+      div.textContent=k+"　"+r.odds[k]+"倍";
+
+      el("oddsView").append(div);
+    }
+  }
+
+  el("publicOdds").hidden=
+    !Object.keys(r.odds||{}).length;
+
+  if(auth.currentUser?.uid===adminUID){
+    fillForm(r);
+  }
 }
 
-#playArea {
-  border-color: #8c753e;
+async function loadPoints(user,version){
+
+  const userRef=doc(db,"users",user.uid);
+
+  try{
+
+    await runTransaction(db,async t=>{
+      const snapshot=await t.get(userRef);
+
+      if(!snapshot.exists()){
+        t.set(userRef,{
+          points:INITIAL_POINTS
+        });
+      }
+    });
+
+    if(
+      auth.currentUser?.uid!==user.uid||
+      version!==authVersion
+    )return;
+
+    pointsUnsubscribe=onSnapshot(
+      userRef,
+      snapshot=>{
+        if(version!==authVersion)return;
+
+        const points=snapshot.data()?.points??0;
+
+        el("points").textContent=
+          points.toLocaleString()+" pt";
+      },
+      e=>{
+        if(version!==authVersion)return;
+
+        el("points").textContent=
+          "取得エラー："+e.code;
+      }
+    );
+
+  }catch(e){
+    if(version!==authVersion)return;
+
+    el("points").textContent=
+      "ポイントエラー："+e.code;
+  }
 }
 
-#playArea > p {
-  font-size: 13px;
-  color: #a9b5c7;
+onAuthStateChanged(auth,user=>{
+
+  const version=++authVersion;
+
+  if(unsubscribe){
+    unsubscribe();
+    unsubscribe=null;
+  }
+
+  if(pointsUnsubscribe){
+    pointsUnsubscribe();
+    pointsUnsubscribe=null;
+  }
+
+  el("loginArea").hidden=!!user;
+  el("userArea").hidden=!user;
+  el("playArea").hidden=!user;
+
+  watchLists(user);
+
+  el("adminArea").hidden=
+    user?.uid!==adminUID;
+
+  el("message").textContent="";
+  el("points").textContent="取得中...";
+
+  if(user){
+
+    el("userName").textContent=user.email;
+
+    el("role").textContent=
+      user.uid===adminUID
+      ?"管理者"
+      :"一般参加者";
+
+    el("password").value="";
+
+    loadPoints(user,version);
+  }
+
+  unsubscribe=onSnapshot(
+    ref,
+    snapshot=>{
+      renderRace(
+        snapshot.exists()?snapshot.data():{}
+      );
+    },
+    e=>{
+      el("status").textContent=
+        "接続エラー："+e.code;
+    }
+  );
+});
+
+function formData(){
+
+  const name=el("raceName").value.trim();
+  const venue=el("venue").value.trim();
+  const raceNo=Number(el("raceNo").value);
+
+  const boats=nums.map(n=>
+    el("boat"+n).value.trim()
+  );
+
+  const odds={};
+
+  if(
+    !name||
+    !venue||
+    !Number.isInteger(raceNo)||
+    raceNo<1||
+    raceNo>12||
+    boats.some(x=>!x)
+  ){
+    throw Error(
+      "レース情報と全選手名を入力してください。"
+    );
+  }
+
+  for(const k of combos){
+
+    const value=el("odd"+k).value;
+
+    if(value===""){
+      throw Error(
+        "120通りのオッズを設定してください。"
+      );
+    }
+
+    const x=Number(value);
+
+    if(!Number.isFinite(x)||x<1){
+      throw Error(
+        "オッズは1倍以上にしてください。"
+      );
+    }
+
+    odds[k]=x;
+  }
+
+  return {
+    name,
+    venue,
+    raceNo,
+    boats,
+    odds
+  };
 }
 
-#choices {
-  background: #0e1520;
-  padding: 10px 6px;
-  border-radius: 12px;
-  margin: 15px 0;
+function action(id,fn){
+
+  el(id).onclick=async()=>{
+
+    if(auth.currentUser?.uid!==adminUID){
+      return;
+    }
+
+    el(id).disabled=true;
+
+    try{
+
+      await fn();
+
+      el("adminMessage").textContent=
+        "更新しました！";
+
+    }catch(e){
+
+      el("adminMessage").textContent=e.message;
+
+    }finally{
+
+      el(id).disabled=false;
+    }
+  };
 }
 
-#choices > div {
-  display: grid !important;
-  grid-template-columns:
-    34px repeat(6, minmax(0, 1fr));
-  gap: 4px !important;
-  margin: 8px 0;
-  align-items: center;
-  font-size: 13px;
+async function change(fn){
+
+  await runTransaction(db,async t=>{
+
+    const snapshot=await t.get(ref);
+
+    const r=snapshot.exists()
+      ?snapshot.data()
+      :{};
+
+    t.set(ref,fn(r));
+  });
 }
 
-#choices label {
-  position: relative;
-  display: flex !important;
-  justify-content: center;
-  align-items: center;
-  min-width: 0;
-  height: 43px;
-  border-radius: 7px;
-  font-size: 18px;
-  font-weight: 900;
-  opacity: .55;
-  border: 2px solid transparent;
+action("save",async()=>{
+
+  const data=formData();
+
+  await change(r=>{
+
+    if(
+      ["受付中","締切","確定"].includes(r.status)
+    ){
+      throw Error(
+        "準備中のみ編集できます。"
+      );
+    }
+
+    return {
+      ...data,
+      status:"準備中",
+      result:null
+    };
+  });
+});
+
+action("open",async()=>{
+
+  await change(r=>{
+
+    if(
+      r.status!=="準備中"||
+      !r.name||
+      !r.venue||
+      r.boats?.length!==6||
+      Object.keys(r.odds||{}).length!==120
+    ){
+      throw Error(
+        "全120通りのオッズとレース情報を保存してください。"
+      );
+    }
+
+    return {
+      ...r,
+      status:"受付中",
+      round:crypto.randomUUID()
+    };
+  });
+});
+
+action("close",async()=>{
+
+  await change(r=>{
+
+    if(r.status!=="受付中"){
+      throw Error("受付中のみ締切できます。");
+    }
+
+    return {
+      ...r,
+      status:"締切"
+    };
+  });
+});
+
+action("finish",async()=>{
+
+  const result=[1,2,3].map(n=>
+    Number(el("res"+n).value)
+  );
+
+  if(new Set(result).size!==3){
+    throw Error("同じ号艇は選べません。");
+  }
+
+  await change(r=>{
+
+    if(r.status!=="締切"){
+      throw Error(
+        "先に投票を締め切ってください。"
+      );
+    }
+
+    return {
+      ...r,
+      status:"確定",
+      result
+    };
+  });
+});
+
+action("reset",async()=>{
+
+  const rs=await getDocs(
+    query(
+      collection(db,"tickets"),
+      where("settled","==",false)
+    )
+  );
+
+  if(!rs.empty){
+    throw Error(
+      "先に未払戻しを処理してください。"
+    );
+  }
+
+  if(!confirm("現在のレース情報を消去しますか？")){
+    throw Error("キャンセルしました。");
+  }
+
+  await change(r=>{
+
+    if(
+      r.status&&
+      r.status!=="確定"&&
+      r.status!=="準備中"
+    ){
+      throw Error(
+        "先にレースを確定してください。"
+      );
+    }
+
+    return {
+      status:"準備中",
+      boats:[],
+      odds:{},
+      result:null
+    };
+  });
+});
+
+el("autoOdds").onclick=()=>{
+
+  if(auth.currentUser?.uid!==adminUID)return;
+
+  const weights=[
+    0.42,0.20,0.15,
+    0.10,0.08,0.05
+  ];
+
+  for(const k of combos){
+
+    const [a,b,c]=k.split("-").map(Number);
+
+    const p1=weights[a-1];
+
+    const p2=
+      weights[b-1]/(1-p1);
+
+    const p3=
+      weights[c-1]/
+      (1-p1-weights[b-1]);
+
+    const probability=p1*p2*p3;
+
+    const odds=Math.max(1,0.75/probability);
+
+    el("odd"+k).value=odds.toFixed(1);
+  }
+
+  el("oddsMessage").textContent=
+    "120通りのオッズを自動生成しました！";
+};
+
+el("bulkSet").onclick=()=>{
+
+  if(auth.currentUser?.uid!==adminUID)return;
+
+  const value=Number(el("bulkOdds").value);
+
+  if(!Number.isFinite(value)||value<1){
+    alert("1倍以上を入力してください。");
+    return;
+  }
+
+  for(const k of combos){
+    el("odd"+k).value=value.toFixed(1);
+  }
+
+  el("oddsMessage").textContent=
+    "120通りのオッズを一括設定しました！";
+};
+
+function watchLists(user){
+
+  listStops.forEach(f=>f());
+  listStops=[];
+
+  el("history").replaceChildren();
+  el("ranking").replaceChildren();
+
+  if(!user)return;
+
+  const err=e=>{
+    el("playMessage").textContent=e.message;
+  };
+
+  listStops.push(
+    onSnapshot(
+      query(
+        collection(db,"tickets"),
+        where("uid","==",user.uid)
+      ),
+      snap=>{
+
+        el("history").replaceChildren();
+
+        snap.forEach(d=>{
+
+          const t=d.data();
+          const line=document.createElement("p");
+
+          line.textContent=
+            t.key+" / "+t.stake+"pt / "+
+            (t.settled
+              ?"払戻 "+t.payout+"pt"
+              :"未確定");
+
+          el("history").append(line);
+        });
+      },
+      err
+    )
+  );
+
+  listStops.push(
+    onSnapshot(
+      collection(db,"users"),
+      snap=>{
+
+        el("ranking").replaceChildren();
+
+        snap.docs.sort(
+          (a,b)=>b.data().points-a.data().points
+        ).forEach((d,i)=>{
+
+          const line=document.createElement("p");
+
+          line.textContent=
+            (i+1)+"位 "+
+            (d.id===user.uid
+              ?"あなた"
+              :"参加者 "+d.id.slice(0,6))+
+            " / "+
+            d.data().points.toLocaleString()+"pt";
+
+          el("ranking").append(line);
+        });
+      },
+      err
+    )
+  );
 }
 
-#choices label input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  width: 100% !important;
-  height: 100%;
-  margin: 0;
-  cursor: pointer;
+function drawChoices(){
+
+  el("choices").replaceChildren();
+
+  const mode=el("mode").value;
+
+  for(let i=0;i<(mode==="ボックス"?1:3);i++){
+
+    const row=document.createElement("div");
+
+    row.style.cssText=
+      "display:flex;gap:5px;align-items:center;flex-wrap:wrap";
+
+    row.append(
+      mode==="ボックス"?"選択":(i+1)+"着"
+    );
+
+    for(const n of nums){
+
+      const l=document.createElement("label");
+
+      l.style.cssText=
+        "display:inline-flex;align-items:center;gap:2px";
+
+      const c=document.createElement("input");
+
+      c.type=mode==="通常"?"radio":"checkbox";
+      c.name="pick"+i;
+      c.value=n;
+      c.style.width="auto";
+      c.onchange=updateTotal;
+
+      l.append(c,String(n));
+      row.append(l);
+    }
+
+    el("choices").append(row);
+  }
+
+  updateTotal();
 }
 
-#choices label:has(input:checked) {
-  opacity: 1;
-  border-color: #ffffff;
-  box-shadow: 0 0 10px #ffffff40;
-  transform: translateY(-2px);
+function keys(){
+
+  const pick=i=>Array.from(
+    document.querySelectorAll(
+      'input[name="pick'+i+'"]:checked'
+    ),
+    x=>x.value
+  );
+
+  const a=pick(0);
+
+  const b=el("mode").value==="ボックス"
+    ?a:pick(1);
+
+  const c=el("mode").value==="ボックス"
+    ?a:pick(2);
+
+  return combos.filter(k=>{
+
+    const [x,y,z]=k.split("-");
+
+    return a.includes(x)&&
+      b.includes(y)&&
+      c.includes(z);
+  });
 }
 
-#choices label:nth-of-type(1) {
-  background: white;
-  color: black;
+function updateTotal(){
+
+  const k=keys();
+  const n=Number(el("stake").value);
+
+  el("total").textContent=
+    k.length+"点 / 合計 "+
+    (k.length*n).toLocaleString()+"pt";
+
+  el("submitTicket").disabled=
+    busy||
+    currentRace.status!=="受付中"||
+    !currentRace.round||
+    !k.length||
+    !Number.isSafeInteger(n)||
+    n<MIN_BET;
 }
 
-#choices label:nth-of-type(2) {
-  background: #333333;
-  color: white;
-}
+el("mode").onchange=drawChoices;
+el("stake").oninput=updateTotal;
 
-#choices label:nth-of-type(3) {
-  background: #f04444;
-  color: white;
-}
+drawChoices();
 
-#choices label:nth-of-type(4) {
-  background: #3279e8;
-  color: white;
-}
+el("submitTicket").onclick=async()=>{
 
-#choices label:nth-of-type(5) {
-  background: #ffe052;
-  color: black;
-}
+  const user=auth.currentUser;
+  const list=keys();
+  const stake=Number(el("stake").value);
+  const round=currentRace.round;
 
-#choices label:nth-of-type(6) {
-  background: #35bd73;
-  color: black;
-}
+  if(
+    !user||
+    busy||
+    !Number.isSafeInteger(stake)||
+    stake<MIN_BET||
+    !list.length||
+    !round
+  )return;
 
-#total {
-  background: #0c121c;
-  border: 1px solid #806c38;
-  padding: 20px 10px;
-  border-radius: 12px;
-  color: #f5cf65 !important;
-  font-size: 22px !important;
-  font-weight: 900;
-}
+  if(!confirm(
+    list.length+"点を順番に登録します。途中で失敗すると一部だけ成立する場合があります。続けますか？"
+  ))return;
 
-#submitTicket {
-  font-size: 19px;
-  min-height: 56px;
-}
+  busy=true;
+  updateTotal();
 
-#playMessage {
-  color: #6ee7a8 !important;
-  font-weight: bold;
-}
+  let done=0;
 
-#history p,
-#ranking p {
-  background: #101722;
-  border: 1px solid #303b4e;
-  border-radius: 10px;
-  padding: 15px 8px;
-  font-size: 14px;
-  margin: 8px 0;
-}
+  try{
 
-#ranking p:nth-child(1) {
-  border-color: #d4af37;
-  color: #f5cf65;
-  background: #30291b;
-}
+    const u=doc(db,"users",user.uid);
 
-#ranking p:nth-child(2) {
-  border-color: #aab4c5;
-  color: #dce3ed;
-}
+    for(const key of list){
 
-#ranking p:nth-child(3) {
-  border-color: #b87945;
-  color: #e5a875;
-}
+      const tRef=doc(collection(db,"tickets"));
 
-#adminArea {
-  border: 1px solid #806c38;
-}
+      await runTransaction(db,async t=>{
 
-#close {
-  background: #9b303a;
-  border-color: #d85560;
-  color: white;
-}
+        const r=(await t.get(ref)).data();
 
-#open {
-  background: #176b48;
-  border-color: #35bd73;
-  color: white;
-}
+        const balance=
+          (await t.get(u)).data().points;
 
-#reset {
-  background: #303b4e;
-  border-color: #526078;
-  color: white;
-}
+        if(
+          r.status!=="受付中"||
+          r.round!==round
+        ){
+          throw Error("受付終了");
+        }
+
+        if(balance<stake*(list.length-done)){
+          throw Error("ポイント不足");
+        }
+
+        const odds=r.odds[key];
+
+        if(!Number.isFinite(odds)||odds<1){
+          throw Error("オッズ未設定");
+        }
+
+        t.set(tRef,{
+          uid:user.uid,
+          round,
+          key,
+          stake,
+          odds,
+          settled:false
+        });
+
+        t.update(u,{
+          points:balance-stake,
+          lastTicket:tRef.id
+        });
+      });
+
+      done++;
+    }
+
+    el("playMessage").textContent=
+      done+"点登録完了";
+
+  }catch(e){
+
+    el("playMessage").textContent=
+      done+"点成立 / "+e.message;
+
+  }finally{
+
+    busy=false;
+    updateTotal();
+  }
+};
+
+action("settle",async()=>{
+
+  const snap=await getDocs(
+    query(
+      collection(db,"tickets"),
+      where("settled","==",false)
+    )
+  );
+
+  for(const d of snap.docs){
+
+    await runTransaction(db,async t=>{
+
+      const r=(await t.get(ref)).data();
+
+      const ticket=
+        (await t.get(d.ref)).data();
+
+      if(ticket.settled)return;
+
+      if(
+        r.status!=="確定"||
+        r.round!==ticket.round||
+        !r.result
+      ){
+        throw Error(
+          "対象レースが未確定です"
+        );
+      }
+
+      const u=doc(db,"users",ticket.uid);
+
+      const balance=
+        (await t.get(u)).data().points;
+
+      const payout=
+        ticket.key===r.result.join("-")
+        ?Math.round(ticket.stake*ticket.odds)
+        :0;
+
+      if(!Number.isSafeInteger(payout+balance)){
+        throw Error("ポイント上限エラー");
+      }
+
+      t.update(u,{
+        points:balance+payout
+      });
+
+      t.update(d.ref,{
+        settled:true,
+        payout
+      });
+    });
+  }
+});
+
+</script>
+</body>
+</html>

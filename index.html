@@ -388,7 +388,7 @@ placeholder="パスワード（6文字以上）">
 
 <section id="playArea" hidden>
 <h2>3連単 ポイント投票</h2>
-<p>ゲーム内ポイント専用・換金不可</p>
+<p>ゲーム内ポイント専用・換金不可。新規レースは締切時の確定オッズで払戻します。</p>
 
 <select id="mode">
 <option>通常</option>
@@ -462,6 +462,8 @@ min="1" step="0.1" value="10">
 <button id="reset">次のレースを準備</button>
 
 <p id="adminMessage"></p>
+<details><summary>全参加者の投票・収支</summary>
+<button id="auditRefresh">履歴を更新</button><div id="auditView"></div></details>
 </section>
 
 <script type="module">
@@ -683,10 +685,10 @@ function renderRace(r){
   el("oddsView").replaceChildren();
 
   for(const k of combos){
-    if(r.odds?.[k]!=null){
+    if((r.finalOdds || r.odds)?.[k]!=null){
       const div=document.createElement("div");
 
-      div.textContent=k+"　"+r.odds[k]+"倍";
+      div.textContent=k+"　"+(r.finalOdds || r.odds)[k]+"倍";
 
       el("oddsView").append(div);
     }
@@ -939,25 +941,39 @@ action("open",async()=>{
     return {
       ...r,
       status:"受付中",
-      round:crypto.randomUUID()
+      round:crypto.randomUUID(),
+      dynamicOdds:true
     };
   });
 });
 
 action("close",async()=>{
-
   await change(r=>{
-
-    if(r.status!=="受付中"){
-      throw Error("受付中のみ締切できます。");
-    }
-
-    return {
-      ...r,
-      status:"締切"
-    };
+    if(r.status!=="受付中") throw Error("受付中のみ締切できます。");
+    return {...r,status:"締切"};
   });
+  await freezeOdds();
 });
+async function freezeOdds(){
+  const round=currentRace.round;
+  const snap=await getDocs(query(collection(db,"tickets"),where("round","==",round)));
+  const totals={}; let total=0;
+  snap.forEach(d=>{const t=d.data(); totals[t.key]=(totals[t.key]||0)+t.stake; total+=t.stake;});
+  await change(r=>{
+    if(r.status!=="締切" || r.round!==round) throw Error("対象レースが変わりました");
+    if(!r.dynamicOdds || r.finalOdds) return r;
+    const finalOdds={};
+    for(const k of combos){
+      const base=r.odds[k];
+      finalOdds[k]=Math.max(1,Math.floor(10*(base*10000+total*0.75)/(10000+base*(totals[k]||0)))/10);
+    }
+    return {...r,finalOdds};
+  });
+}
+const retryOdds=document.createElement("button");
+retryOdds.id="retryOdds"; retryOdds.textContent="確定オッズを再計算";
+el("close").after(retryOdds);
+action("retryOdds",freezeOdds);
 
 action("finish",async()=>{
 
@@ -971,7 +987,7 @@ action("finish",async()=>{
 
   await change(r=>{
 
-    if(r.status!=="締切"){
+    if(r.status!=="締切" || (r.dynamicOdds && !r.finalOdds)){
       throw Error(
         "先に投票を締め切ってください。"
       );
@@ -1367,7 +1383,7 @@ action("settle",async()=>{
 
       const payout=
         ticket.key===r.result.join("-")
-        ?Math.round(ticket.stake*ticket.odds)
+        ?Math.round(ticket.stake*(r.dynamicOdds ? r.finalOdds[ticket.key] : ticket.odds))
         :0;
 
       if(!Number.isSafeInteger(payout+balance)){
@@ -1380,12 +1396,35 @@ action("settle",async()=>{
 
       t.update(d.ref,{
         settled:true,
-        payout
+        payout,
+        finalOdds:r.dynamicOdds ? r.finalOdds[ticket.key] : ticket.odds
       });
     });
   }
 });
 
+
+el("auditRefresh").onclick=async()=>{
+  if(auth.currentUser?.uid!==adminUID)return;
+  const area=el("auditView"); area.textContent="取得中...";
+  try{
+    const [ts,ps]=await Promise.all([getDocs(collection(db,"tickets")),getDocs(collection(db,"profiles"))]);
+    if(auth.currentUser?.uid!==adminUID)return;
+    const names=new Map(ps.docs.map(d=>[d.id,d.data().nickname]));
+    const sums=new Map(); area.replaceChildren();
+    const details=document.createElement("div");
+    for(const d of ts.docs){
+      const t=d.data(), name=names.get(t.uid)||t.uid;
+      const v=sums.get(t.uid)||{stake:0,payout:0,pending:0,settledStake:0};
+      v.stake+=t.stake;
+      if(t.settled){v.payout+=t.payout||0;v.settledStake+=t.stake;}else v.pending+=t.stake;
+      sums.set(t.uid,v);
+      const p=document.createElement("p");p.textContent=name+" / "+t.key+" / 購入 "+t.stake+" pt / "+(t.settled?"払戻 "+t.payout+" pt":"未確定")+" / レース "+t.round;details.append(p);
+    }
+    for(const [uid,v] of sums){const p=document.createElement("p");p.textContent=(names.get(uid)||uid)+"：購入 "+v.stake+" / 払戻 "+v.payout+" / 確定収支 "+(v.payout-v.settledStake)+" / 未確定 "+v.pending+" pt";area.append(p);}
+    const h=document.createElement("h3");h.textContent="全投票明細";area.append(h,details);
+  }catch(e){area.textContent=e.message;}
+};
 </script>
 <nav id="bottomNav">
   <button onclick="window.scrollTo({top:0,behavior:'smooth'})">
@@ -2687,4 +2726,4 @@ el("grantButton").onclick = async () => {
 };
 </script>
 </body>
-</htm_>
+</html>

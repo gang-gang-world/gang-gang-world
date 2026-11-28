@@ -1984,5 +1984,384 @@ html{
   }
 
 })();
+</script><style>
+#admin{
+  background:#171e2c;
+  border:2px solid #c9a34e;
+  border-radius:18px;
+  padding:15px;
+}
+
+#admin > h2{
+  text-align:center;
+  font-size:21px;
+  color:#f5cf65;
+  margin:10px 0 20px;
+}
+
+.ggw-admin-group{
+  background:#202b3c;
+  border:1px solid #405068;
+  border-radius:13px;
+  margin:12px 0;
+  overflow:hidden;
+  text-align:left;
+}
+
+.ggw-admin-group > summary{
+  padding:16px 12px;
+  color:#f5cf65;
+  font-weight:900;
+  font-size:15px;
+  cursor:pointer;
+}
+
+.ggw-admin-group[open]{
+  border-color:#c9a34e;
+}
+
+.ggw-admin-content{
+  padding:12px;
+  background:#151d2a;
+  border-top:1px solid #405068;
+}
+
+.ggw-admin-content label{
+  color:#dbe3ee;
+  font-weight:bold;
+  margin:10px 0 4px;
+}
+
+.ggw-admin-content input,
+.ggw-admin-content select,
+.ggw-admin-content textarea{
+  width:100%;
+  background:#0d1420;
+  color:white;
+  border:1px solid #455168;
+  border-radius:10px;
+  padding:12px;
+}
+
+.ggw-admin-content button{
+  width:100%;
+  min-height:45px;
+  border-radius:10px;
+  margin:6px 0;
+}
+
+.ggw-admin-content #open{
+  background:#20583e!important;
+  color:white!important;
+  border:1px solid #68bc89;
+}
+
+.ggw-admin-content #close{
+  background:#693333!important;
+  color:white!important;
+  border:1px solid #b96767;
+}
+
+.ggw-admin-content #reset{
+  background:#303c50!important;
+  color:white!important;
+}
+
+#ggwAdminStatus{
+  background:#101722;
+  border:1px solid #a98a42;
+  border-radius:12px;
+  padding:15px;
+  margin:12px 0;
+  text-align:center;
+}
+
+#ggwAdminRace{
+  color:#f5cf65;
+  font-size:18px;
+  font-weight:900;
+  margin:8px 0;
+}
+
+#ggwAdminState{
+  font-size:14px;
+  font-weight:bold;
+}
+
+#adminMessage{
+  color:#f5cf65;
+  background:#101722;
+  border-radius:9px;
+  padding:10px;
+  overflow-wrap:anywhere;
+}
+
+#adminMessage:empty{
+  display:none;
+}
+
+#admin .h-race-group{
+  margin:12px 0;
+}
+
+</style>
+
+<script>
+(function(){
+
+  function setupAdmin(){
+
+    const admin=
+      document.getElementById("admin");
+
+    if(!admin)return;
+
+    if(admin.dataset.organized==="true")
+      return;
+
+    admin.dataset.organized="true";
+
+    const el=id=>
+      document.getElementById(id);
+
+    const heading=admin.querySelector("h2");
+
+    if(heading){
+      heading.textContent="⚙️ 競馬管理画面";
+    }
+
+    const dashboard=
+      document.createElement("div");
+
+    dashboard.id="ggwAdminStatus";
+
+    dashboard.innerHTML=`
+      <small>現在のレース状況</small>
+      <div id="ggwAdminRace">取得中...</div>
+      <div id="ggwAdminState">準備中</div>
+    `;
+
+    if(heading){
+      heading.after(dashboard);
+    }else{
+      admin.prepend(dashboard);
+    }
+
+    function updateStatus(){
+
+      const race=el("raceTitle");
+      const status=el("status");
+
+      el("ggwAdminRace").textContent=
+        race?.textContent||"レース未登録";
+
+      const value=
+        status?.textContent||"準備中";
+
+      const names={
+        open:"🟢 投票受付中",
+        closed:"🔴 投票締切",
+        finished:"🏆 結果確定",
+        ready:"🟡 準備中"
+      };
+
+      el("ggwAdminState").textContent=
+        names[value]||value;
+
+    }
+
+    ["raceTitle","status"].forEach(id=>{
+
+      const node=el(id);
+
+      if(node){
+
+        new MutationObserver(updateStatus)
+        .observe(node,{
+          childList:true,
+          subtree:true,
+          characterData:true
+        });
+
+      }
+
+    });
+
+    updateStatus();
+
+    function group(title,opened=false){
+
+      const details=
+        document.createElement("details");
+
+      details.className="ggw-admin-group";
+
+      details.open=opened;
+
+      const summary=
+        document.createElement("summary");
+
+      summary.textContent=title;
+
+      const content=
+        document.createElement("div");
+
+      content.className="ggw-admin-content";
+
+      details.append(summary,content);
+
+      admin.append(details);
+
+      return content;
+
+    }
+
+    function move(id,target){
+
+      const node=el(id);
+
+      if(!node)return;
+
+      const previous=node.previousElementSibling;
+
+      if(previous?.tagName==="LABEL"){
+
+        target.append(previous);
+
+      }
+
+      target.append(node);
+
+    }
+
+    const raceGroup=group(
+      "🏇 レース作成・出走馬登録"
+    );
+
+    [
+      "name",
+      "venue",
+      "names",
+      "baseOdds",
+      "save"
+    ].forEach(id=>move(id,raceGroup));
+
+    const oddsGroup=group(
+      "📊 オッズ設定・変更"
+    );
+
+    [
+      "editType",
+      "editKey",
+      "editOdds",
+      "changeOdds"
+    ].forEach(id=>move(id,oddsGroup));
+
+    const acceptGroup=group(
+      "🚦 投票受付管理",true
+    );
+
+    [
+      "open",
+      "close"
+    ].forEach(id=>move(id,acceptGroup));
+
+    const resultGroup=group(
+      "🏆 結果登録・払戻処理"
+    );
+
+    [
+      "first",
+      "second",
+      "third",
+      "finish",
+      "settle",
+      "reset"
+    ].forEach(id=>move(id,resultGroup));
+
+    const auditGroup=group(
+      "📋 参加者の投票明細"
+    );
+
+    [
+      "audit",
+      "auditView"
+    ].forEach(id=>move(id,auditGroup));
+
+    const auditTitle=
+      [...admin.querySelectorAll("h3")]
+      .find(node=>
+        node.textContent.includes(
+          "レース別投票集計"
+        )
+      );
+
+    if(auditTitle){
+
+      const panel=auditTitle.closest(
+        ".h-race-group"
+      );
+
+      if(panel){
+
+        const extraGroup=group(
+          "📈 レース別収支・購入集計"
+        );
+
+        extraGroup.append(panel);
+
+      }
+
+    }
+
+    [...admin.children].forEach(node=>{
+
+      if(node.tagName==="H3"){
+
+        const titles=[
+          "個別オッズ変更",
+          "受付管理",
+          "レース結果",
+          "参加者の投票明細"
+        ];
+
+        if(titles.includes(
+          node.textContent.trim()
+        )){
+          node.hidden=true;
+        }
+
+      }
+
+    });
+
+    const message=el("adminMessage");
+
+    if(message){
+
+      dashboard.after(message);
+
+      message.setAttribute(
+        "aria-live","polite"
+      );
+
+    }
+
+  }
+
+  if(document.readyState==="loading"){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      setupAdmin
+    );
+
+  }else{
+
+    setupAdmin();
+
+  }
+
+})();
 </script></body>
 </html>

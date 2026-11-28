@@ -1668,5 +1668,321 @@ onAuthStateChanged(auth,user=>{
 
 });
 
+</script><style>
+:root{
+  color-scheme:dark;
+  --gold:#f5cf65;
+  --panel:#171e2c;
+  --muted:#9ca9bc;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  background:linear-gradient(
+    160deg,#090c12,#111827,#090c12
+  );
+  color:#f5f7fa;
+  font-family:-apple-system,
+  BlinkMacSystemFont,
+  "Helvetica Neue",sans-serif;
+  text-align:center;
+  margin:0 auto;
+  max-width:650px;
+  padding:10px 12px 180px!important;
+  font-size:14px;
+}
+
+h1{
+  color:#f5cf65;
+  font-size:clamp(20px,5.5vw,28px);
+  font-weight:900;
+  letter-spacing:1px;
+  margin:12px 0 6px;
+  text-shadow:0 0 18px #a77b35;
+}
+
+h2{
+  color:#f5cf65;
+  font-size:18px;
+  margin:4px 0 12px;
+}
+
+h3{
+  color:#f5cf65;
+  font-size:16px;
+  margin:8px 0;
+}
+
+p{
+  margin:8px 0;
+  line-height:1.4;
+}
+
+section{
+  background:#171e2c;
+  border:1px solid #354052;
+  border-radius:14px;
+  padding:14px;
+  margin:0 0 10px;
+  box-shadow:0 8px 25px #0006;
+}
+
+section:first-of-type{
+  background:linear-gradient(
+    135deg,#202b3c,#111827
+  );
+  border:1px solid #8a713d;
+  text-align:left;
+  position:relative;
+  padding:12px;
+}
+
+section:first-of-type p{
+  text-align:left!important;
+}
+
+#balance{
+  font-size:28px;
+  font-weight:900;
+  color:#f5cf65;
+  text-align:left;
+  margin:4px 0;
+}
+
+button{
+  background:linear-gradient(
+    135deg,#ffe49a,#c89b36
+  );
+  color:#111827;
+  border:none;
+  border-radius:8px;
+  padding:10px 12px;
+  min-height:42px;
+  margin:4px 0;
+  font-size:14px;
+  font-weight:bold;
+}
+
+button:active{
+  transform:scale(.97);
+  opacity:.85;
+}
+
+button:disabled{
+  opacity:.5;
+}
+
+input,select,textarea{
+  background:#0d1420;
+  color:white;
+  border:1px solid #455168;
+  border-radius:8px;
+  padding:10px;
+  margin:4px 0;
+  font-size:16px;
+}
+
+label{
+  display:block;
+  text-align:left;
+}
+
+small{
+  color:#9ca9bc;
+}
+
+.horse{
+  background:#263247;
+  border:1px solid #354052;
+  border-radius:6px;
+  padding:8px 12px;
+  margin:4px 0;
+  text-align:left;
+}
+
+.number{
+  min-width:32px;
+  height:32px;
+  background:#f5cf65;
+  color:#111827;
+  border-radius:5px;
+  font-weight:900;
+}
+
+.record{
+  background:#101722;
+  border:1px solid #354052;
+  border-radius:10px;
+  padding:12px;
+  margin:7px 0;
+}
+
+#total{
+  background:#101722;
+  border:1px solid #9b803e;
+  border-radius:10px;
+  color:#f5cf65;
+  font-size:18px;
+  font-weight:bold;
+  padding:12px;
+}
+
+#horseNav{
+  position:fixed!important;
+  bottom:85px!important;
+  left:10px!important;
+  right:10px!important;
+  display:flex!important;
+  z-index:99999!important;
+  background:#111827!important;
+  border:1px solid #f5cf65;
+  border-radius:16px;
+  padding:6px 8px;
+  gap:0;
+}
+
+#horseNav button{
+  width:auto!important;
+  flex:1;
+  color:#f5cf65!important;
+  background:transparent!important;
+  font-size:12px;
+  padding:8px 3px;
+  margin:0;
+}
+
+[hidden]{
+  display:none!important;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+</style>
+
+<script>
+(function(){
+
+  function setupHorseDesign(){
+
+    const title=document.querySelector("h1");
+
+    if(title){
+      title.textContent="ギャンギャンワールド";
+    }
+
+    const subtitle=document.querySelector("body > h2");
+
+    if(subtitle){
+
+      const p=document.createElement("p");
+
+      p.textContent="公式競馬ゲーム";
+
+      subtitle.replaceWith(p);
+
+    }
+
+    const nav=document.querySelector("nav");
+
+    if(!nav)return;
+
+    nav.id="horseNav";
+
+    const admin=document.getElementById("admin");
+    const play=document.getElementById("play");
+    const horses=document.getElementById("horses");
+    const history=document.getElementById("historyArea");
+    const ranking=document.getElementById("rankingArea");
+
+    const race=horses?.closest("section");
+
+    nav.replaceChildren();
+
+    function addButton(text,action){
+
+      const button=document.createElement("button");
+
+      button.type="button";
+
+      button.textContent=text;
+
+      button.onclick=action;
+
+      nav.append(button);
+
+      return button;
+
+    }
+
+    function show(target){
+
+      if(target && !target.hidden){
+
+        target.scrollIntoView({
+          behavior:"smooth",
+          block:"start"
+        });
+
+      }
+
+    }
+
+    addButton("ホーム",()=>{
+
+      location.href="./home.html";
+
+    });
+
+    addButton("レース",()=>show(race));
+
+    addButton("投票",()=>show(play));
+
+    addButton("履歴",()=>show(history));
+
+    addButton("順位",()=>show(ranking));
+
+    const adminButton=addButton(
+      "管理",
+      ()=>show(admin)
+    );
+
+    function updateAdmin(){
+
+      adminButton.hidden=!admin||admin.hidden;
+
+    }
+
+    if(admin){
+
+      new MutationObserver(updateAdmin)
+      .observe(admin,{
+        attributes:true,
+        attributeFilter:["hidden"]
+      });
+
+    }
+
+    updateAdmin();
+
+  }
+
+  if(document.readyState==="loading"){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      setupHorseDesign
+    );
+
+  }else{
+
+    setupHorseDesign();
+
+  }
+
+})();
 </script></body>
 </html>

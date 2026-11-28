@@ -5714,5 +5714,37 @@ dialog:has(#rankingList) {
     🏇 競馬
     <small>HORSE RACE</small>
   </a>
-</div></body>
+</div><style>
+.ggw-home-link{
+  display:block!important;
+  background:linear-gradient(135deg,#202938,#131923);
+  color:#f5cf65!important;
+  border:1px solid #c9a34e;
+  border-radius:12px;
+  padding:13px;
+  margin:0 0 15px;
+  text-align:center;
+  font-size:15px;
+  font-weight:bold;
+  text-decoration:none;
+  box-shadow:0 4px 12px #0005;
+}
+</style>
+
+<a id="ggwHomeLink"
+   class="ggw-home-link"
+   href="./home.html">
+  🏠 総合ホームへ戻る
+</a>
+
+<script>
+(function(){
+  const link=document.getElementById("ggwHomeLink");
+  const menu=document.querySelector(".ggw-switch");
+
+  if(menu && link){
+    menu.after(link);
+  }
+})();
+</script></body>
 </html>

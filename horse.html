@@ -3625,5 +3625,174 @@ if (!fixOddsPanel()) {
   });
 }
 </script>
+
+<script type="module">
+import { getApp } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  onSnapshot,
+  runTransaction,
+  Timestamp
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+const db = getFirestore(getApp());
+const auth = getAuth(getApp());
+const ref = doc(db,"horseRaces","current");
+const ADMIN = "w3ZZn1g16fT9wfep9rkMzt7VrPt2";
+
+const el = id => document.getElementById(id);
+
+let race = {};
+let closing = false;
+
+const panel = document.createElement("div");
+
+panel.style.cssText =
+  "border:1px solid #c9a34e;border-radius:12px;padding:12px;margin:12px 0;background:#101722";
+
+panel.innerHTML = `
+  <h3>⏰ 自動締切設定</h3>
+  <label>締切日時</label>
+  <input id="horseCloseTime" type="datetime-local">
+  <button id="horseSaveCloseTime">締切時間を設定</button>
+  <p id="horseCloseMessage"></p>
+`;
+
+el("open").before(panel);
+
+const timer = document.createElement("div");
+
+timer.style.cssText =
+  "border:1px solid gold;border-radius:10px;padding:12px;margin:10px 0;font-size:20px;font-weight:bold;color:gold;text-align:center";
+
+el("status").after(timer);
+
+el("horseSaveCloseTime").onclick = async () => {
+  if(auth.currentUser?.uid !== ADMIN) return;
+
+  const time = new Date(
+    el("horseCloseTime").value
+  ).getTime();
+
+  if(!Number.isFinite(time) || time <= Date.now()){
+    alert("未来の締切時間を設定してください");
+    return;
+  }
+
+  try{
+    await runTransaction(db, async t => {
+      const s = await t.get(ref);
+      const r = s.data();
+
+      if(!r || !["準備中","受付中"].includes(r.status)){
+        throw Error("レースを準備してください");
+      }
+
+      if(r.closeAt && r.closeAt.toMillis() <= Date.now()){
+        throw Error("既に締切時間を過ぎています");
+      }
+
+      t.update(ref,{
+        closeAt:Timestamp.fromMillis(time)
+      });
+    });
+
+    el("horseCloseMessage").textContent =
+      "締切時間の設定完了！";
+
+  }catch(e){
+    alert(e.message);
+  }
+};
+
+function expired(){
+  return race.status === "受付中" &&
+    race.closeAt &&
+    race.closeAt.toMillis() <= Date.now();
+}
+
+async function autoClose(){
+  if(closing || auth.currentUser?.uid !== ADMIN) return;
+
+  closing = true;
+
+  try{
+    await runTransaction(db,async t => {
+      const s = await t.get(ref);
+      const r = s.data();
+
+      if(r?.status === "受付中" &&
+         r.closeAt &&
+         r.closeAt.toMillis() <= Date.now()){
+
+        t.update(ref,{
+          status:"締切"
+        });
+      }
+    });
+  }catch(e){
+    console.error(e);
+  }finally{
+    closing = false;
+  }
+}
+
+function updateTimer(){
+  if(race.status === "締切" || expired()){
+    timer.textContent = "🔴 投票受付終了";
+    timer.style.color = "#ff6464";
+    el("buy").disabled = true;
+
+    if(expired()){
+      el("status").textContent = "締切";
+      autoClose();
+    }
+
+    return;
+  }
+
+  if(race.status === "確定"){
+    timer.textContent = "🏆 結果確定";
+    return;
+  }
+
+  if(!race.closeAt){
+    timer.textContent = "締切時間未設定";
+    timer.style.color = "#f5cf65";
+    return;
+  }
+
+  const left = Math.max(0,Math.ceil(
+    (race.closeAt.toMillis()-Date.now())/1000
+  ));
+
+  const h = Math.floor(left/3600);
+  const m = Math.floor(left%3600/60);
+  const s = left%60;
+
+  timer.style.color =
+    left <= 60 ? "#ff6464" : "#f5cf65";
+
+  timer.textContent =
+    "⏳ 締切まで "+h+"時間 "+m+"分 "+s+"秒";
+}
+
+onSnapshot(ref,s => {
+  race = s.data() || {};
+  updateTimer();
+});
+
+document.addEventListener("click",e => {
+  if(e.target.closest("#buy") && expired()){
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    alert("投票受付は終了しました");
+  }
+},true);
+
+setInterval(updateTimer,1000);
+</script>
 </body>
 </html>

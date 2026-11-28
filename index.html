@@ -5524,5 +5524,152 @@ dialog:has(#rankingList) {
   setup();
 
 })();
-</script></body>
+</script>
+<style>
+/* GGW V7 投票画面デザイン */
+
+#playArea {
+  padding: 12px !important;
+}
+
+#playArea > h2 {
+  font-size: 22px;
+  border-left: 4px solid #f5cf65;
+  padding-left: 10px;
+  text-align: left;
+}
+
+#playArea #mode {
+  min-height: 48px;
+  border: 1px solid #c9a348;
+  font-weight: bold;
+  text-align: center;
+}
+
+#playArea #choices {
+  padding: 8px;
+  background: #0a111c;
+  border: 1px solid #526078;
+  border-radius: 14px;
+}
+
+#playArea #choices > div {
+  display: grid !important;
+  grid-template-columns:
+    32px repeat(6, minmax(0, 1fr));
+  gap: 4px !important;
+  align-items: center;
+  padding: 12px 0;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+#playArea #choices > div:last-child {
+  border-bottom: none;
+}
+
+#playArea #choices label {
+  position: relative;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  min-height: 54px;
+  padding: 6px 0;
+  margin: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+#playArea #choices label:nth-of-type(1) {
+  background: #ffffff;
+  color: #111111;
+}
+
+#playArea #choices label:nth-of-type(2) {
+  background: #222222;
+  color: #ffffff;
+}
+
+#playArea #choices label:nth-of-type(3) {
+  background: #dc3545;
+  color: #ffffff;
+}
+
+#playArea #choices label:nth-of-type(4) {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+#playArea #choices label:nth-of-type(5) {
+  background: #facc15;
+  color: #111111;
+}
+
+#playArea #choices label:nth-of-type(6) {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+#playArea #choices input {
+  width: 16px !important;
+  height: 16px;
+  margin: 2px;
+  accent-color: #f5cf65;
+}
+
+#playArea #choices label:has(input:checked) {
+  border-color: #f5cf65;
+  box-shadow: 0 0 0 2px #f5cf65;
+}
+
+#playArea #choices label:not(:has(input:checked)) {
+  opacity: 0.72;
+}
+
+#playArea #stake {
+  min-height: 52px;
+  font-size: 22px;
+  font-weight: bold;
+  text-align: center;
+}
+
+#playArea #total {
+  padding: 18px 8px;
+  margin-top: 14px;
+  background: #252116;
+  border: 1px solid #f5cf65;
+  border-radius: 14px;
+  font-size: 20px;
+  font-weight: 900;
+  color: #f5cf65;
+  font-variant-numeric: tabular-nums;
+}
+
+#playArea #submitTicket {
+  min-height: 54px;
+  font-size: 17px;
+  border-radius: 12px;
+}
+
+#playArea #submitTicket:disabled {
+  opacity: 0.45;
+}
+
+#playArea #playMessage {
+  padding: 8px;
+  overflow-wrap: anywhere;
+}
+
+#playArea #history {
+  padding: 10px;
+  border: 1px solid #354052;
+  border-radius: 12px;
+  background: #101824;
+}
+</style>
+</body>
 </html>

@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ギャンギャンワールド競馬</title>
+<style>
+*{box-sizing:border-box}
+body{
+ background:#101722;
+ color:white;
+ font-family:sans-serif;
+ max-width:650px;
+ margin:auto;
+ padding:15px 15px 100px;
+}
+h1,h2,h3{color:#f5cf65}
+h1{text-align:center;font-size:23px}
+section{
+ background:#192332;
+ border:1px solid #465269;
+ border-radius:16px;
+ padding:16px;
+ margin:14px 0;
+}
+button,input,select,textarea{
+ width:100%;
+ padding:12px;
+ margin:5px 0;
+ border-radius:9px;
+ font-size:16px;
+}
+input,select,textarea{
+ background:#101722;
+ color:white;
+ border:1px solid #465269;
+}
+button{
+ background:linear-gradient(135deg,#ffe49a,#c89b36);
+ color:#111827;
+ border:0;
+ font-weight:bold;
+}
+button:disabled{opacity:.4}
+[hidden]{display:none!important}
+#balance{
+ font-size:32px;
+ font-weight:bold;
+ color:#f5cf65;
+ text-align:center;
+}
+.horse{
+ display:flex;
+ align-items:center;
+ gap:12px;
+ padding:10px;
+ margin:5px 0;
+ background:#263449;
+ border-radius:8px;
+}
+.number{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ min-width:32px;
+ height:32px;
+ border-radius:5px;
+ background:#e8d18c;
+ color:black;
+ font-weight:bold;
+}
+.picks{
+ display:grid;
+ grid-template-columns:repeat(6,1fr);
+ gap:5px;
+}
+.picks label{
+ text-align:center;
+ background:#29384b;
+ border:1px solid #536177;
+ border-radius:8px;
+ padding:8px 0;
+}
+.picks input{width:auto}
+.picks label:has(input:checked){
+ background:#f5cf65;
+ color:black;
+}
+.record{
+ background:#101722;
+ border:1px solid #354052;
+ padding:12px;
+ border-radius:10px;
+ margin:7px 0;
+ overflow-wrap:anywhere;
+}
+#total{
+ padding:15px;
+ border:1px solid gold;
+ border-radius:10px;
+ color:gold;
+ font-size:20px;
+ text-align:center;
+}
+nav{
+ position:fixed;
+ bottom:0;
+ left:0;
+ right:0;
+ background:#101722;
+ border-top:1px solid #c89b36;
+ display:flex;
+ gap:8px;
+ padding:10px;
+ padding-bottom:calc(10px + env(safe-area-inset-bottom));
+}
+nav button{flex:1}
+small{color:#aeb9c9}
+</style>
+</head>
+<body>
+
+<h1>GANG GANG WORLD</h1>
+<h2 style="text-align:center">🏇 競馬</h2>
+
+<section>
+<p style="text-align:center">共通所持ポイント</p>
+<div id="balance">接続中...</div>
+<p id="account"></p>
+<small>ゲーム内ポイント専用・換金不可</small>
+<button id="backLogin" hidden>競艇側でログインする</button>
+</section>
+
+<section>
+<h2>🏇 開催レース</h2>
+<h3 id="raceTitle">未登録</h3>
+<p id="status">接続中...</p>
+<div id="horses"></div>
+<p id="result"></p>
+</section>
+
+<section id="play" hidden>
+<h2>ポイント投票</h2>
+
+<label>投票方式</label>
+<select id="type">
+<option>単勝</option>
+<option>複勝</option>
+<option>馬連</option>
+<option>馬単</option>
+<option>ワイド</option>
+<option>3連複</option>
+<option>3連単</option>
+</select>
+
+<label>購入方法</label>
+<select id="mode">
+<option>通常</option>
+<option>ボックス</option>
+<option>フォーメーション</option>
+</select>
+
+<div id="choices"></div>
+
+<label>1点あたりのポイント</label>
+<input id="stake" type="number"
+min="100" step="100" value="100">
+
+<div id="total">0点 / 0 pt</div>
+<button id="buy" disabled>投票確定</button>
+<p id="message"></p>
+</section>
+
+<section>
+<h2>📊 オッズ一覧</h2>
+<select id="oddsType">
+<option>単勝</option>
+<option>複勝</option>
+<option>馬連</option>
+<option>馬単</option>
+<option>ワイド</option>
+<option>3連複</option>
+<option>3連単</option>
+</select>
+<select id="sort">
+<option value="normal">馬番順</option>
+<option value="low">低い順</option>
+<option value="high">高い順</option>
+</select>
+<div id="odds"></div>
+<button id="moreOdds" hidden>さらに表示</button>
+</section>
+
+<section id="historyArea" hidden>
+<h2>📋 競馬投票履歴</h2>
+<div id="history"></div>
+</section>
+
+<section id="rankingArea" hidden>
+<h2>🏆 共通ランキング</h2>
+<div id="ranking"></div>
+</section>
+
+<section id="admin" hidden>
+<h2>⚙️ 競馬管理者メニュー</h2>
+
+<label>レース名</label>
+<input id="name" placeholder="有馬記念">
+
+<label>開催場</label>
+<input id="venue" placeholder="中山">
+
+<label>出走馬（1行に1頭・3〜18頭）</label>
+<textarea id="names" rows="8"
+placeholder="馬名1&#10;馬名2&#10;馬名3"></textarea>
+
+<label>初期オッズ</label>
+<input id="baseOdds" type="number"
+min="1" max="100000" step="0.1" value="10">
+
+<button id="save">レース準備・オッズ生成</button>
+
+<h3>個別オッズ変更</h3>
+<select id="editType">
+<option>単勝</option>
+<option>複勝</option>
+<option>馬連</option>
+<option>馬単</option>
+<option>ワイド</option>
+<option>3連複</option>
+<option>3連単</option>
+</select>
+<input id="editKey" placeholder="例：1-2-3">
+<input id="editOdds" type="number"
+min="1" max="100000" step="0.1"
+placeholder="変更後のオッズ">
+<button id="changeOdds">オッズ変更</button>
+
+<h3>受付管理</h3>
+<button id="open">投票受付開始</button>
+<button id="close">投票締切</button>
+
+<h3>レース結果</h3>
+<input id="first" type="number" placeholder="1着の馬番">
+<input id="second" type="number" placeholder="2着の馬番">
+<input id="third" type="number" placeholder="3着の馬番">
+
+<button id="finish">結果登録</button>
+<button id="settle">未払戻しを処理</button>
+<button id="reset">次のレースを準備</button>
+
+<h3>参加者の投票明細</h3>
+<button id="audit">履歴を取得</button>
+<div id="auditView"></div>
+<p id="adminMessage"></p>
+</section>
+
+<nav>
+<button onclick="location.href='./index.html'">🚤 競艇</button>
+<button onclick="window.scrollTo(0,0)">🏇 競馬</button>
+<button onclick="document.getElementById('rankingArea').scrollIntoView()">🏆 順位</button>
+</nav>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
+
+import {
+ getAuth,
+ onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+import {
+ getFirestore,
+ doc,
+ collection,
+ query,
+ where,
+ getDocs,
+ onSnapshot,
+ runTransaction
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+const app=initializeApp({
+ apiKey:"AIzaSyBhYaW-hDQcCL6sc8WNqz5glK1xZOJ-YL8",
+ authDomain:"gang-gang-world.firebaseapp.com",
+ projectId:"gang-gang-world",
+ appId:"1:546523018840:web:8ca419709eff43f0d83c2d"
+});
+
+const db=getFirestore(app);
+const auth=getAuth(app);
+
+const ADMIN="w3ZZn1g16fT9wfep9rkMzt7VrPt2";
+
+const raceRef=doc(db,"horseRaces","current");
+const tickets=collection(db,"horseTickets");
+
+const el=id=>document.getElementById(id);
+const fmt=n=>Number(n||0).toLocaleString("ja-JP");
+
+const types={
+ "単勝":1,
+ "複勝":1,
+ "馬連":2,
+ "馬単":2,
+ "ワイド":2,
+ "3連複":3,
+ "3連単":3
+};
+
+const ordered=type=>
+ ["馬単","3連単"].includes(type);
+
+let race={};
+let balance=0;
+let busy=false;
+let adminBusy=false;
+let stops=[];
+let profiles={};
+let users=[];
+let oddsLimit=100;
+
+function canonical(type,arr){
+ return (ordered(type)
+ ? [...arr]
+ : [...arr].sort((a,b)=>a-b)).join("-");
+}
+
+function combinations(type,n){
+ const result=new Set();
+ const size=types[type];
+
+ function walk(arr){
+  if(arr.length===size){
+   result.add(canonical(type,arr));
+   return;
+  }
+
+  for(let i=1;i<=n;i++){
+   if(!arr.includes(i))walk([...arr,i]);
+  }
+ }
+
+ walk([]);
+ return [...result];
+}
+
+function record(area,text){
+ const div=document.createElement("div");
+ div.className="record";
+ div.textContent=text;
+ area.append(div);
+}
+
+function renderRace(){
+ el("raceTitle").textContent=
+ [race.venue,race.name].filter(Boolean).join(" ")||
+ "レース未登録";
+
+ el("status").textContent=race.status||"準備中";
+ el("horses").replaceChildren();
+
+ (race.horses||[]).forEach((name,i)=>{
+  const row=document.createElement("div");
+  row.className="horse";
+
+  const num=document.createElement("span");
+  num.className="number";
+  num.textContent=i+1;
+
+  row.append(num,document.createTextNode(name));
+  el("horses").append(row);
+ });
+
+ el("result").textContent=race.result
+ ? "確定結果："+race.result.join(" → ")
+ : "";
+
+ renderOdds();
+ updateTotal();
+}
+
+function renderOdds(){
+ const type=el("oddsType").value;
+ const list=Object.entries(race.odds?.[type]||{});
+
+ if(el("sort").value==="low")
+ list.sort((a,b)=>a[1]-b[1]);
+
+ if(el("sort").value==="high")
+ list.sort((a,b)=>b[1]-a[1]);
+
+ el("odds").replaceChildren();
+
+ list.slice(0,oddsLimit).forEach(([key,odd])=>{
+  record(el("odds"),key+"　｜　"+odd+"倍");
+ });
+
+ el("moreOdds").hidden=list.length<=oddsLimit;
+}
+
+el("moreOdds").onclick=()=>{
+ oddsLimit+=100;
+ renderOdds();
+};
+
+el("oddsType").onchange=()=>{
+ oddsLimit=100;
+ renderOdds();
+};
+
+el("sort").onchange=()=>{
+ oddsLimit=100;
+ renderOdds();
+};
+
+function drawChoices(){
+ const type=el("type").value;
+ const mode=el("mode").value;
+ const size=types[type];
+ const count=mode==="ボックス"?1:size;
+
+ el("choices").replaceChildren();
+
+ for(let i=0;i<count;i++){
+  const title=document.createElement("h3");
+
+  title.textContent=mode==="ボックス"
+  ?"馬番を選択"
+  :ordered(type)?(i+1)+"着":(i+1)+"列目";
+
+  const grid=document.createElement("div");
+  grid.className="picks";
+
+  (race.horses||[]).forEach((name,j)=>{
+   const label=document.createElement("label");
+   const input=document.createElement("input");
+
+   input.type=mode==="通常"?"radio":"checkbox";
+   input.name="horsePick"+i;
+   input.value=j+1;
+   input.onchange=updateTotal;
+
+   label.append(input,document.createTextNode(String(j+1)));
+   grid.append(label);
+  });
+
+  el("choices").append(title,grid);
+ }
+
+ updateTotal();
+}
+
+function selectedKeys(){
+ const type=el("type").value;
+ const mode=el("mode").value;
+ const size=types[type];
+
+ const pick=i=>Array.from(
+ document.querySelectorAll(
+ 'input[name="horsePick'+i+'"]:checked'
+ ),x=>Number(x.value));
+
+ const groups=Array.from(
+ {length:size},
+ (_,i)=>pick(mode==="ボックス"?0:i)
+ );
+
+ const result=new Set();
+
+ function walk(arr,i){
+  if(i===size){
+   result.add(canonical(type,arr));
+   return;
+  }
+
+  for(const n of groups[i]){
+   if(!arr.includes(n))walk([...arr,n],i+1);
+  }
+ }
+
+ walk([],0);
+ return [...result];
+}
+
+function updateTotal(){
+ const keys=selectedKeys();
+ const stake=Number(el("stake").value);
+ const total=keys.length*stake;
+
+ el("total").textContent=
+ keys.length+"点 / 合計 "+fmt(total)+" pt";
+
+ el("buy").disabled=
+ busy||
+ !auth.currentUser||
+ race.status!=="受付中"||
+ !keys.length||
+ !Number.isSafeInteger(stake)||
+ stake<100||
+ stake%100!==0||
+ total>balance||
+ keys.some(k=>!race.odds?.[el("type").value]?.[k]);
+}
+
+el("type").onchange=drawChoices;
+el("mode").onchange=drawChoices;
+el("stake").oninput=updateTotal;
+
+onSnapshot(raceRef,s=>{
+ const previous=JSON.stringify(race.horses||[]);
+ const oldRound=race.round;
+
+ race=s.data()||{};
+
+ renderRace();
+
+ if(previous!==JSON.stringify(race.horses||[])||
+ oldRound!==race.round){
+  drawChoices();
+ }
+},e=>{
+ el("status").textContent=e.message;
+});
+
+el("backLogin").onclick=()=>{
+ location.href="./index.html";
+};
+
+function renderRanking(){
+ el("ranking").replaceChildren();
+
+ [...users].sort((a,b)=>b.points-a.points)
+ .forEach((u,i)=>{
+  record(el("ranking"),
+  (i===0?"🥇":i===1?"🥈":i===2?"🥉":(i+1)+"位")
+  +"　"+(profiles[u.id]||"参加者")
+  +"　"+fmt(u.points)+" pt");
+ });
+}
+
+onAuthStateChanged(auth,user=>{
+ stops.forEach(stop=>stop());
+ stops=[];
+ balance=0;
+ profiles={};
+ users=[];
+
+ el("history").replaceChildren();
+ el("ranking").replaceChildren();
+ el("auditView").replaceChildren();
+
+ el("play").hidden=!user;
+ el("historyArea").hidden=!user;
+ el("rankingArea").hidden=!user;
+ el("admin").hidden=user?.uid!==ADMIN;
+ el("backLogin").hidden=!!user;
+
+ if(!user){
+  el("balance").textContent="ログインしてください";
+  el("account").textContent="";
+  updateTotal();
+  return;
+ }
+
+ el("account").textContent=
+ user.uid===ADMIN?"管理者":"一般参加者";
+
+ stops.push(onSnapshot(
+ doc(db,"users",user.uid),s=>{
+  balance=s.data()?.points||0;
+  el("balance").textContent=fmt(balance)+" pt";
+  updateTotal();
+ },e=>el("balance").textContent=e.message));
+
+ stops.push(onSnapshot(
+ collection(db,"profiles"),s=>{
+  profiles=Object.fromEntries(
+  s.docs.map(d=>[d.id,d.data().nickname]));
+  renderRanking();
+ }));
+
+ stops.push(onSnapshot(
+ collection(db,"users"),s=>{
+  users=s.docs.map(d=>({
+   id:d.id,
+   points:d.data().points||0
+  }));
+  renderRanking();
+ }));
+
+ stops.push(onSnapshot(
+ query(tickets,where("uid","==",user.uid)),s=>{
+  el("history").replaceChildren();
+
+  if(s.empty){
+   el("history").textContent="投票履歴なし";
+  }
+
+  s.forEach(d=>{
+   const t=d.data();
+
+   record(el("history"),
+   t.type+" "+t.key+
+   " / "+fmt(t.stake)+" pt / "+
+   (t.settled
+   ?"払戻 "+fmt(t.payout)+" pt"
+   :"結果待ち"));
+  });
+ },e=>el("message").textContent=e.message));
+
+ updateTotal();
+});
+
+el("buy").onclick=async()=>{
+ const user=auth.currentUser;
+ const type=el("type").value;
+ const keys=selectedKeys();
+ const stake=Number(el("stake").value);
+ const round=race.round;
+
+ if(!user||busy||!keys.length||
+ !Number.isSafeInteger(stake)||
+ stake<100||stake%100!==0||
+ stake*keys.length>balance)return;
+
+ if(!confirm(
+ type+" "+keys.length+"点\n"+
+ fmt(stake*keys.length)+" pt\n"+
+ "投票しますか？途中で締切になると一部のみ成立する場合があります。"
+ ))return;
+
+ busy=true;
+ updateTotal();
+
+ let done=0;
+
+ try{
+  const u=doc(db,"users",user.uid);
+
+  for(const key of keys){
+   const ticketRef=doc(tickets);
+
+   await runTransaction(db,async t=>{
+    const r=(await t.get(raceRef)).data();
+    const p=(await t.get(u)).data();
+
+    if(r.status!=="受付中"||r.round!==round)
+    throw Error("受付終了");
+
+    if(!p||p.points<stake*(keys.length-done))
+    throw Error("ポイント不足");
+
+    const odds=r.odds?.[type]?.[key];
+
+    if(!Number.isFinite(odds)||odds<1)
+    throw Error("オッズ未設定");
+
+    t.set(ticketRef,{
+     uid:user.uid,
+     round,
+     type,
+     key,
+     stake,
+     odds,
+     settled:false
+    });
+
+    t.update(u,{
+     points:p.points-stake,
+     lastHorseTicket:ticketRef.id
+    });
+   });
+
+   done++;
+  }
+
+  el("message").textContent=done+"点の投票完了！";
+
+ }catch(e){
+  el("message").textContent=
+  done+"点成立 / "+e.message;
+ }finally{
+  busy=false;
+  updateTotal();
+ }
+};
+
+async function change(fn){
+ await runTransaction(db,async t=>{
+  const s=await t.get(raceRef);
+  t.set(raceRef,fn(s.data()||{}));
+ });
+}
+
+function action(id,fn){
+ el(id).onclick=async()=>{
+  if(auth.currentUser?.uid!==ADMIN||adminBusy)return;
+
+  adminBusy=true;
+  el(id).disabled=true;
+  el("adminMessage").textContent="処理中...";
+
+  try{
+   await fn();
+   el("adminMessage").textContent="更新完了！";
+  }catch(e){
+   el("adminMessage").textContent=e.message;
+  }finally{
+   adminBusy=false;
+   el(id).disabled=false;
+  }
+ };
+}
+
+action("save",async()=>{
+ const name=el("name").value.trim();
+ const venue=el("venue").value.trim();
+
+ const horses=el("names").value
+ .split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+
+ const base=Number(el("baseOdds").value);
+
+ if(!name||!venue||
+ horses.length<3||horses.length>18||
+ horses.some(x=>x.length>80)||
+ !Number.isFinite(base)||base<1||base>100000){
+  throw Error("レース名・開催場・出走馬・オッズを確認してください");
+ }
+
+ const odds={};
+
+ for(const type of Object.keys(types)){
+  odds[type]={};
+
+  for(const key of combinations(type,horses.length)){
+   odds[type][key]=base;
+  }
+ }
+
+ await change(r=>{
+  if(r.status&&r.status!=="準備中")
+  throw Error("先に次のレースを準備してください");
+
+  return {
+   name,
+   venue,
+   horses,
+   odds,
+   status:"準備中",
+   result:null
+  };
+ });
+});
+
+action("changeOdds",async()=>{
+ const type=el("editType").value;
+ const raw=el("editKey").value.trim();
+ const key=canonical(type,raw.split("-").map(Number));
+ const odd=Number(el("editOdds").value);
+
+ if(!Number.isFinite(odd)||odd<1||odd>100000)
+ throw Error("オッズを確認してください");
+
+ await change(r=>{
+  if(r.status!=="準備中")
+  throw Error("準備中のみ変更できます");
+
+  if(!Object.hasOwn(r.odds?.[type]||{},key))
+  throw Error("買い目が存在しません");
+
+  r.odds[type][key]=odd;
+  return r;
+ });
+});
+
+action("open",async()=>{
+ await change(r=>{
+  if(r.status!=="準備中"||
+  !r.name||!r.horses?.length||
+  !Object.keys(r.odds||{}).length)
+  throw Error("先にレース情報を保存してください");
+
+  return {
+   ...r,
+   status:"受付中",
+   round:crypto.randomUUID()
+  };
+ });
+});
+
+action("close",async()=>{
+ await change(r=>{
+  if(r.status!=="受付中")
+  throw Error("受付中のレースがありません");
+
+  return {...r,status:"締切"};
+ });
+});
+
+action("finish",async()=>{
+ const result=["first","second","third"]
+ .map(id=>Number(el(id).value));
+
+ await change(r=>{
+  if(r.status!=="締切")
+  throw Error("先に投票を締め切ってください");
+
+  if(new Set(result).size!==3||
+  result.some(n=>!Number.isInteger(n)||
+  n<1||n>r.horses.length))
+  throw Error("着順を確認してください");
+
+  return {...r,result,status:"確定"};
+ });
+});
+
+function isWinner(type,key,result,count){
+ const a=key.split("-").map(Number);
+
+ switch(type){
+  case "単勝":
+   return a[0]===result[0];
+
+  case "複勝":
+   return result.slice(0,count>=8?3:2).includes(a[0]);
+
+  case "馬連":
+   return key===canonical(type,result.slice(0,2));
+
+  case "馬単":
+   return key===result.slice(0,2).join("-");
+
+  case "ワイド":
+   return a.every(n=>result.includes(n));
+
+  case "3連複":
+   return key===canonical(type,result);
+
+  case "3連単":
+   return key===result.join("-");
+
+  default:
+   return false;
+ }
+}
+
+action("settle",async()=>{
+ const snap=await getDocs(
+ query(tickets,where("settled","==",false))
+ );
+
+ for(const d of snap.docs){
+  await runTransaction(db,async t=>{
+   const r=(await t.get(raceRef)).data();
+   const ticket=(await t.get(d.ref)).data();
+
+   if(ticket.settled)return;
+
+   if(r.status!=="確定"||r.round!==ticket.round)
+   throw Error("対象レースが未確定です");
+
+   const u=doc(db,"users",ticket.uid);
+   const p=(await t.get(u)).data();
+
+   const win=isWinner(
+    ticket.type,
+    ticket.key,
+    r.result,
+    r.horses.length
+   );
+
+   const payout=win
+   ?Math.floor(ticket.stake*ticket.odds)
+   :0;
+
+   if(!p||!Number.isSafeInteger(p.points+payout))
+   throw Error("ポイント計算エラー");
+
+   t.update(u,{
+    points:p.points+payout
+   });
+
+   t.update(d.ref,{
+    settled:true,
+    payout,
+    finalOdds:ticket.odds
+   });
+  });
+ }
+});
+
+action("reset",async()=>{
+ const pending=await getDocs(
+ query(tickets,where("settled","==",false))
+ );
+
+ if(!pending.empty)
+ throw Error("先に未払戻しを処理してください");
+
+ if(!confirm("次のレースを準備しますか？"))
+ throw Error("キャンセル");
+
+ await change(r=>{
+  if(r.status&&
+  !["確定","準備中"].includes(r.status))
+  throw Error("先にレースを確定してください");
+
+  return {
+   status:"準備中",
+   horses:[],
+   odds:{},
+   result:null
+  };
+ });
+});
+
+action("audit",async()=>{
+ const snap=await getDocs(tickets);
+ const area=el("auditView");
+
+ area.replaceChildren();
+
+ const groups={};
+
+ snap.forEach(d=>{
+  const t=d.data();
+  (groups[t.round]??=[]).push(t);
+ });
+
+ for(const [round,list] of Object.entries(groups)){
+  const details=document.createElement("details");
+  const summary=document.createElement("summary");
+
+  summary.textContent=
+  "レース "+round.slice(0,8)+" / "+list.length+"件";
+
+  details.append(summary);
+
+  list.forEach(t=>{
+   record(details,
+   (profiles[t.uid]||t.uid)+" / "+
+   t.type+" "+t.key+
+   " / 購入 "+fmt(t.stake)+" pt"+
+   (t.settled
+   ?" / 払戻 "+fmt(t.payout)+" pt"
+   :" / 未確定"));
+  });
+
+  area.append(details);
+ }
+});
+
+drawChoices();
+
+</script>
+</body>
+</html>

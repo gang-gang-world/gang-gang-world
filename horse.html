@@ -2778,5 +2778,300 @@ body{
   }
 
 })();
+</script><style>
+#horseInputs .horse{
+ display:flex;
+ align-items:center;
+ gap:12px;
+ padding:10px;
+ margin:8px 0;
+ background:#202b3c;
+ border:1px solid #405068;
+ border-radius:12px;
+}
+
+#horseInputs input{
+ flex:1;
+ min-width:0;
+ margin:0;
+}
+
+#horseInputs .number{
+ width:40px;
+ height:40px;
+ flex-shrink:0;
+ font-size:18px;
+ font-weight:900;
+}
+
+#horseCount,#raceNo{
+ width:100%;
+ background:#0d1420;
+ color:white;
+ border:1px solid #455168;
+ border-radius:10px;
+ padding:12px;
+ font-size:16px;
+}
+
+#horseInputs .number[data-frame="1"]{
+ background:white;color:black;
+}
+#horseInputs .number[data-frame="2"]{
+ background:#111;color:white;
+}
+#horseInputs .number[data-frame="3"]{
+ background:#dc2626;color:white;
+}
+#horseInputs .number[data-frame="4"]{
+ background:#2563eb;color:white;
+}
+#horseInputs .number[data-frame="5"]{
+ background:#facc15;color:black;
+}
+#horseInputs .number[data-frame="6"]{
+ background:#16a34a;color:white;
+}
+#horseInputs .number[data-frame="7"]{
+ background:#f97316;color:black;
+}
+#horseInputs .number[data-frame="8"]{
+ background:#ec4899;color:white;
+}
+
+#horseInputs{
+ margin:12px 0;
+}
+</style>
+
+<script>
+(function(){
+
+function setup(){
+
+ const el=id=>document.getElementById(id);
+
+ const names=el("names");
+ const save=el("save");
+
+ if(!names||!save)return;
+
+ if(!el("horseCount")){
+
+ const label=document.createElement("label");
+ label.textContent="出走頭数";
+
+ const count=document.createElement("select");
+ count.id="horseCount";
+
+ for(let i=3;i<=18;i++){
+  count.add(new Option(i+"頭",i));
+ }
+
+ count.value="6";
+
+ const area=document.createElement("div");
+ area.id="horseInputs";
+
+ names.before(label,count,area);
+
+ }
+
+ const count=el("horseCount");
+ const area=el("horseInputs");
+
+ const oldLabel=names.previousElementSibling;
+
+ if(oldLabel?.tagName==="LABEL"){
+  oldLabel.hidden=true;
+ }
+
+ names.hidden=true;
+
+ function frameOf(n,total){
+
+  if(total<=8)return n;
+
+  const sizes=Array(8).fill(1);
+
+  let extra=total-8;
+
+  for(let i=7;extra>0;i--){
+
+   sizes[i]++;
+   extra--;
+
+   if(i===0)i=8;
+
+  }
+
+  let sum=0;
+
+  for(let i=0;i<8;i++){
+
+   sum+=sizes[i];
+
+   if(n<=sum)return i+1;
+
+  }
+
+  return 8;
+
+ }
+
+ function sync(){
+
+  names.value=[...area.querySelectorAll("input")]
+   .map(x=>x.value.trim())
+   .join("\n");
+
+ }
+
+ function draw(){
+
+  const old=[...area.querySelectorAll("input")]
+   .map(x=>x.value);
+
+  const saved=names.value.split(/\r?\n/);
+
+  area.replaceChildren();
+
+  const total=Number(count.value);
+
+  for(let i=0;i<total;i++){
+
+   const row=document.createElement("div");
+   row.className="horse";
+
+   const badge=document.createElement("span");
+   badge.className="number";
+   badge.textContent=i+1;
+   badge.dataset.frame=frameOf(i+1,total);
+
+   const input=document.createElement("input");
+
+   input.type="text";
+   input.placeholder=(i+1)+"番の馬名";
+   input.maxLength=80;
+   input.value=old[i]??saved[i]??"";
+
+   input.addEventListener("input",sync);
+
+   row.append(badge,input);
+
+   area.append(row);
+
+  }
+
+  sync();
+
+ }
+
+ count.onchange=draw;
+
+ draw();
+
+ save.textContent="出走表を登録・オッズ生成";
+
+ save.addEventListener("click",function(e){
+
+  const inputs=[...area.querySelectorAll("input")];
+
+  if(inputs.some(x=>!x.value.trim())){
+
+   e.preventDefault();
+   e.stopImmediatePropagation();
+
+   alert("すべての馬名を入力してください");
+
+   return;
+
+  }
+
+  sync();
+
+ },true);
+
+ const horses=el("horses");
+
+ function getNumbers(){
+
+  if(!horses)return [];
+
+  return [...horses.querySelectorAll(".horse")]
+   .map((row,i)=>({
+    number:i+1,
+    name:row.textContent.trim()
+   }));
+
+ }
+
+ function updateResults(){
+
+  const list=getNumbers();
+
+  ["first","second","third"].forEach(id=>{
+
+   let node=el(id);
+
+   if(!node)return;
+
+   const old=node.value;
+
+   if(node.tagName!=="SELECT"){
+
+    const select=document.createElement("select");
+
+    select.id=id;
+
+    node.replaceWith(select);
+
+    node=select;
+
+   }
+
+   node.replaceChildren(
+    new Option("馬番号を選択","")
+   );
+
+   list.forEach(h=>{
+
+    node.add(new Option(h.name,h.number));
+
+   });
+
+   node.value=old;
+
+  });
+
+ }
+
+ if(horses){
+
+  new MutationObserver(updateResults)
+   .observe(horses,{
+    childList:true,
+    subtree:true
+   });
+
+ }
+
+ updateResults();
+
+}
+
+if(document.readyState==="loading"){
+
+ document.addEventListener(
+  "DOMContentLoaded",setup
+ );
+
+}else{
+
+ setup();
+
+}
+
+})();
 </script></body>
 </html>

@@ -5139,5 +5139,390 @@ details > :not(summary) {
   render();
 
 })();
+</script><style id="ggw-ranking-v6">
+
+#rankingList,
+#ggwPrizeRanking {
+  display:grid !important;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:8px;
+  margin:16px 0;
+  align-items:end;
+}
+
+.ggw-rank-v6 {
+  grid-column:span 6;
+  display:flex !important;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  width:100% !important;
+  padding:12px 10px !important;
+  margin:0 !important;
+  border:1px solid #354052 !important;
+  border-radius:12px !important;
+  background:#171e2c !important;
+  color:white !important;
+  box-shadow:none !important;
+}
+
+.ggw-rank-v6-number {
+  flex-shrink:0;
+  min-width:34px;
+  padding:8px 4px;
+  border-radius:8px;
+  background:#293548;
+  color:#cbd5e1;
+  text-align:center;
+  font-size:14px;
+  font-weight:900;
+}
+
+.ggw-rank-v6-name {
+  flex:1;
+  min-width:0;
+  font-size:14px;
+  font-weight:bold;
+  overflow-wrap:anywhere;
+  text-align:left;
+}
+
+.ggw-rank-v6-points {
+  flex-shrink:0;
+  color:#f5cf65;
+  font-size:16px;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+  text-align:right;
+}
+
+.ggw-rank-v6-points small {
+  font-size:10px;
+  color:#a2afc1;
+  margin-left:3px;
+}
+
+.ggw-rank-v6[data-rank="1"],
+.ggw-rank-v6[data-rank="2"],
+.ggw-rank-v6[data-rank="3"] {
+  grid-column:span 2;
+  flex-direction:column;
+  justify-content:center;
+  gap:8px;
+  padding:12px 4px !important;
+  text-align:center;
+}
+
+.ggw-rank-v6[data-rank="1"] {
+  grid-row:1;
+  grid-column:3 / 5;
+  min-height:180px;
+  background:linear-gradient(
+    160deg,#40351c,#151e2c
+  ) !important;
+  border:2px solid #f5cf65 !important;
+}
+
+.ggw-rank-v6[data-rank="2"] {
+  grid-row:1;
+  grid-column:1 / 3;
+  min-height:155px;
+  border:2px solid #c5cedb !important;
+}
+
+.ggw-rank-v6[data-rank="3"] {
+  grid-row:1;
+  grid-column:5 / 7;
+  min-height:140px;
+  border:2px solid #bd895c !important;
+}
+
+.ggw-rank-v6[data-rank="1"]
+.ggw-rank-v6-number {
+  color:#f5cf65;
+  background:transparent;
+  font-size:25px;
+}
+
+.ggw-rank-v6[data-rank="2"]
+.ggw-rank-v6-number {
+  color:#c5cedb;
+  background:transparent;
+  font-size:22px;
+}
+
+.ggw-rank-v6[data-rank="3"]
+.ggw-rank-v6-number {
+  color:#bd895c;
+  background:transparent;
+  font-size:22px;
+}
+
+.ggw-rank-v6[data-rank="1"]
+.ggw-rank-v6-name,
+.ggw-rank-v6[data-rank="2"]
+.ggw-rank-v6-name,
+.ggw-rank-v6[data-rank="3"]
+.ggw-rank-v6-name {
+  flex:none;
+  width:100%;
+  text-align:center;
+  font-size:13px;
+}
+
+.ggw-rank-v6[data-rank="1"]
+.ggw-rank-v6-points,
+.ggw-rank-v6[data-rank="2"]
+.ggw-rank-v6-points,
+.ggw-rank-v6[data-rank="3"]
+.ggw-rank-v6-points {
+  width:100%;
+  font-size:clamp(10px,3vw,16px);
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+
+.ggw-rank-v6[data-rank="1"]
+.ggw-rank-v6-points small,
+.ggw-rank-v6[data-rank="2"]
+.ggw-rank-v6-points small,
+.ggw-rank-v6[data-rank="3"]
+.ggw-rank-v6-points small {
+  display:block;
+  margin:3px 0 0;
+}
+
+.ggw-rank-v6-header {
+  grid-column:span 6;
+  display:flex;
+  justify-content:space-between;
+  padding:12px;
+  margin-top:8px;
+  background:#263247;
+  border-radius:8px;
+  color:#a2afc1;
+  font-size:12px;
+  font-weight:bold;
+}
+
+dialog:has(#rankingList) {
+  background:#0c121e !important;
+  border:2px solid #a68b47 !important;
+  border-radius:20px !important;
+  padding:14px !important;
+  width:96% !important;
+}
+
+#rankingRefresh {
+  background:#263247 !important;
+  color:#f5cf65 !important;
+  border:1px solid #435168;
+}
+
+#rankingClose {
+  margin-top:15px;
+}
+
+</style>
+
+<script>
+(() => {
+
+  if(window.ggwRankingV6) return;
+
+  window.ggwRankingV6 = true;
+
+  function makePart(cls,text) {
+
+    const node =
+      document.createElement("span");
+
+    node.className = cls;
+    node.textContent = text;
+
+    return node;
+
+  }
+
+  function decorate(area,isPrize) {
+
+    if(!area) return;
+
+    const cards = Array.from(area.children)
+      .filter(node => isPrize
+        ? node.matches("button.ggw-profile-rank")
+        : node.tagName === "DIV" &&
+          (
+            node.classList.contains("ggw-rank-v6") ||
+            node.children.length === 2
+          )
+      );
+
+    if(!cards.length) return;
+
+    cards.forEach((card,i) => {
+
+      if(card.dataset.rankV6 === "done") {
+        return;
+      }
+
+      let name;
+      let points;
+
+      if(isPrize) {
+
+        const text = card.textContent.trim();
+
+        const match = text.match(
+          /^(.*?)\s*\/\s*([\d,.-]+)\s*pt\s*$/
+        );
+
+        if(!match) return;
+
+        name = match[1].replace(
+          /^(?:🥇|🥈|🥉|\d+位)\s*/,
+          ""
+        );
+
+        points = match[2];
+
+      } else {
+
+        const first = card.children[0];
+        const second = card.children[1];
+
+        if(!first || !second) return;
+
+        name = first.textContent.replace(
+          /^(?:👑|🥈|🥉)?\s*第\d+位\s*/,
+          ""
+        ).trim();
+
+        points = second.textContent
+          .replace(/\s*pt\s*$/,"")
+          .trim();
+
+        if(!/^-?[\d,.]+$/.test(points)) {
+          return;
+        }
+
+      }
+
+      const rank = i+1;
+
+      card.dataset.rankV6 = "done";
+      card.dataset.rank = String(rank);
+
+      card.classList.add("ggw-rank-v6");
+
+      const medal = [
+        "👑 1位",
+        "🥈 2位",
+        "🥉 3位"
+      ][i] || rank+"位";
+
+      const rankNode = makePart(
+        "ggw-rank-v6-number",
+        medal
+      );
+
+      const nameNode = makePart(
+        "ggw-rank-v6-name",
+        name
+      );
+
+      const pointNode = makePart(
+        "ggw-rank-v6-points",
+        points
+      );
+
+      const unit =
+        document.createElement("small");
+
+      unit.textContent = "pt";
+
+      pointNode.append(unit);
+
+      card.replaceChildren(
+        rankNode,
+        nameNode,
+        pointNode
+      );
+
+    });
+
+    if(
+      cards.length > 3 &&
+      !area.querySelector(".ggw-rank-v6-header")
+    ) {
+
+      const header =
+        document.createElement("div");
+
+      header.className = "ggw-rank-v6-header";
+
+      const left =
+        document.createElement("span");
+
+      left.textContent = "順位 / 選手名";
+
+      const right =
+        document.createElement("span");
+
+      right.textContent = isPrize
+        ? "獲得賞金"
+        : "所持ポイント";
+
+      header.append(left,right);
+
+      cards[3].before(header);
+
+    }
+
+  }
+
+  function setup() {
+
+    decorate(
+      document.getElementById("rankingList"),
+      false
+    );
+
+    decorate(
+      document.getElementById("ggwPrizeRanking"),
+      true
+    );
+
+  }
+
+  let scheduled = false;
+
+  const observer =
+    new MutationObserver(() => {
+
+      if(scheduled) return;
+
+      scheduled = true;
+
+      requestAnimationFrame(() => {
+
+        scheduled = false;
+
+        setup();
+
+      });
+
+    });
+
+  observer.observe(document.body,{
+    childList:true,
+    subtree:true
+  });
+
+  window.addEventListener("load",setup);
+
+  setup();
+
+})();
 </script></body>
 </html>

@@ -965,7 +965,7 @@ async function freezeOdds(){
     const finalOdds={};
     for(const k of combos){
       const base=r.odds[k];
-      finalOdds[k]=Math.max(1,Math.floor(10*(base*10000+total*0.75)/(10000+base*(totals[k]||0)))/10);
+      finalOdds[k]=Math.max(5,Math.floor(10*(base*10000+total*0.75)/(10000+base*(totals[k]||0)))/10);
     }
     return {...r,finalOdds};
   });

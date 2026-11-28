@@ -4827,5 +4827,317 @@ details > :not(summary) {
 
 })();
 
+</script><style>
+#ggwOddsSort {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+  padding:8px;
+  margin:12px 0;
+  background:#090e17;
+  border:1px solid #a68b47;
+  border-radius:12px;
+}
+
+#ggwOddsSort button {
+  background:#202b3c !important;
+  color:#cbd5e1 !important;
+  border:1px solid #435168;
+  font-size:12px;
+  padding:10px 2px;
+  margin:0;
+}
+
+#ggwOddsSort button.active {
+  background:linear-gradient(
+    135deg,#ffe49a,#c89b36
+  ) !important;
+  color:#111827 !important;
+  border-color:#f5cf65;
+}
+
+#ggwSortedOdds {
+  margin:10px;
+}
+
+.ggw-sort-row {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 8px;
+  margin:5px 0;
+  background:#171e2c;
+  border:1px solid #354052;
+  border-radius:9px;
+}
+
+.ggw-sort-rank {
+  min-width:35px;
+  color:#a2afc1;
+  font-size:12px;
+}
+
+.ggw-sort-boats {
+  display:flex;
+  gap:4px;
+}
+
+.ggw-sort-boat {
+  width:29px;
+  height:29px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  border-radius:5px;
+  font-weight:900;
+  font-size:15px;
+}
+
+.ggw-sort-value {
+  margin-left:auto;
+  color:#f5cf65;
+  font-weight:900;
+  font-size:17px;
+  font-variant-numeric:tabular-nums;
+}
+
+.ggw-sort-heading {
+  color:#f5cf65;
+  padding:12px;
+  font-weight:bold;
+  background:#263247;
+  border-radius:8px;
+}
+</style>
+
+<script>
+(() => {
+
+  if(document.getElementById("ggwOddsSort")) return;
+
+  const area =
+    document.getElementById("oddsView");
+
+  if(!area) return;
+
+  let mode = "normal";
+
+  const colors = [
+    "#ffffff",
+    "#242424",
+    "#e53935",
+    "#2979ff",
+    "#ffdf45",
+    "#229954"
+  ];
+
+  const menu = document.createElement("div");
+
+  menu.id = "ggwOddsSort";
+
+  const sorted = document.createElement("div");
+
+  sorted.id = "ggwSortedOdds";
+  sorted.hidden = true;
+
+  area.before(menu);
+  area.after(sorted);
+
+  const modes = [
+    ["normal","通常"],
+    ["low","⬇ 低い順"],
+    ["high","⬆ 高い順"]
+  ];
+
+  modes.forEach(([value,label]) => {
+
+    const btn = document.createElement("button");
+
+    btn.type = "button";
+    btn.textContent = label;
+    btn.dataset.mode = value;
+
+    btn.onclick = () => {
+
+      mode = value;
+      render();
+
+    };
+
+    menu.append(btn);
+
+  });
+
+  function render() {
+
+    menu.querySelectorAll("button")
+      .forEach(btn => {
+
+        btn.classList.toggle(
+          "active",
+          btn.dataset.mode === mode
+        );
+
+      });
+
+    area.hidden = mode !== "normal";
+    sorted.hidden = mode === "normal";
+
+    if(mode === "normal") return;
+
+    const records = [];
+
+    const rows = area.querySelectorAll(
+      ".ggw-odds-row"
+    );
+
+    rows.forEach(row => {
+
+      const key =
+        row.querySelector("span")
+          ?.textContent.trim();
+
+      const value = Number(
+        row.querySelector("strong")
+          ?.textContent.replace("倍","")
+          .replaceAll(",","")
+      );
+
+      if(
+        key &&
+        Number.isFinite(value) &&
+        value >= 1
+      ) {
+
+        records.push({key,value});
+
+      }
+
+    });
+
+    records.sort((a,b) => {
+
+      const diff = mode === "low"
+        ? a.value - b.value
+        : b.value - a.value;
+
+      return diff || a.key.localeCompare(b.key);
+
+    });
+
+    sorted.replaceChildren();
+
+    const heading =
+      document.createElement("div");
+
+    heading.className = "ggw-sort-heading";
+
+    heading.textContent =
+      mode === "low"
+        ? "人気順ランキング"
+        : "高配当ランキング";
+
+    sorted.append(heading);
+
+    if(!records.length) {
+
+      const msg = document.createElement("p");
+
+      msg.textContent =
+        "オッズ情報がありません";
+
+      sorted.append(msg);
+
+      return;
+
+    }
+
+    records.forEach((record,i) => {
+
+      const row =
+        document.createElement("div");
+
+      row.className = "ggw-sort-row";
+
+      const rank =
+        document.createElement("span");
+
+      rank.className = "ggw-sort-rank";
+
+      rank.textContent = (i+1)+"位";
+
+      const boats =
+        document.createElement("div");
+
+      boats.className = "ggw-sort-boats";
+
+      record.key.split("-").forEach(n => {
+
+        const boat =
+          document.createElement("span");
+
+        boat.className = "ggw-sort-boat";
+
+        boat.textContent = n;
+
+        boat.style.background =
+          colors[Number(n)-1];
+
+        boat.style.color =
+          ["1","5"].includes(n)
+            ? "#111111"
+            : "#ffffff";
+
+        boats.append(boat);
+
+      });
+
+      const odds =
+        document.createElement("strong");
+
+      odds.className = "ggw-sort-value";
+
+      odds.textContent =
+        record.value.toLocaleString("ja-JP",{
+          minimumFractionDigits:1,
+          maximumFractionDigits:1
+        })+"倍";
+
+      row.append(rank,boats,odds);
+
+      sorted.append(row);
+
+    });
+
+  }
+
+  let scheduled = false;
+
+  const observer =
+    new MutationObserver(() => {
+
+      if(scheduled) return;
+
+      scheduled = true;
+
+      requestAnimationFrame(() => {
+
+        scheduled = false;
+
+        render();
+
+      });
+
+    });
+
+  observer.observe(area,{
+    childList:true,
+    subtree:true,
+    characterData:true
+  });
+
+  render();
+
+})();
 </script></body>
 </html>

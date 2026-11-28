@@ -10,6 +10,7 @@ content="width=device-width,initial-scale=1">
 *{
   box-sizing:border-box;
 }
+
 body{
   margin:auto;
   max-width:650px;
@@ -21,30 +22,36 @@ body{
   color:#f5f7fa;
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
 }
+
 header{
   text-align:center;
   padding:25px 0;
 }
+
 .logo{
   color:#f5cf65;
   letter-spacing:4px;
   font-size:11px;
   font-weight:bold;
 }
+
 h1{
   color:#f5cf65;
   font-size:26px;
   margin:12px 0;
   text-shadow:0 0 18px #a77b35;
 }
+
 h2{
   color:#f5cf65;
   font-size:17px;
   margin:0 0 15px;
 }
+
 small{
   color:#9ca9bc;
 }
+
 section{
   background:#171e2c;
   border:1px solid #354052;
@@ -53,6 +60,7 @@ section{
   margin-bottom:14px;
   box-shadow:0 8px 25px #0006;
 }
+
 .wallet{
   border-color:#9b803e;
   text-align:center;
@@ -60,17 +68,20 @@ section{
     135deg,#202b3c,#121925
   );
 }
+
 #balance{
   font-size:32px;
   color:#f5cf65;
   font-weight:900;
   margin:12px 0;
 }
+
 .categories{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:12px;
 }
+
 .race{
   display:block;
   padding:22px 8px;
@@ -80,29 +91,35 @@ section{
   color:white;
   text-decoration:none;
 }
+
 .boat{
   background:linear-gradient(
     135deg,#204b70,#102033
   );
 }
+
 .horse{
   background:linear-gradient(
     135deg,#236746,#102d20
   );
 }
+
 .emoji{
   font-size:40px;
 }
+
 .name{
   font-size:22px;
   font-weight:900;
   margin:10px 0;
 }
+
 .english{
   color:#f5cf65;
   font-size:10px;
   letter-spacing:2px;
 }
+
 .enter{
   margin-top:18px;
   padding:10px;
@@ -111,6 +128,7 @@ section{
   font-size:14px;
   font-weight:bold;
 }
+
 .raceInfo{
   background:#101722;
   border:1px solid #354052;
@@ -119,37 +137,7 @@ section{
   margin:8px 0;
   line-height:1.8;
 }
-.rank{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  padding:12px 8px;
-  border-bottom:1px solid #354052;
-  font-size:14px;
-}
-.rank span:first-child{
-  overflow-wrap:anywhere;
-  min-width:0;
-}
-.rank strong{
-  color:#f5cf65;
-  white-space:nowrap;
-}
-.rank:last-child{
-  border-bottom:none;
-}
-.menu{
-  display:block;
-  text-decoration:none;
-  color:white;
-  padding:16px 8px;
-  border-bottom:1px solid #354052;
-  font-weight:bold;
-}
-.menu:last-child{
-  border:none;
-}
+
 .login{
   display:inline-block;
   color:#f5cf65;
@@ -159,11 +147,13 @@ section{
   border-radius:10px;
   margin:10px 0;
 }
+
 .notice{
   color:#bac5d5;
   font-size:13px;
   line-height:1.8;
 }
+
 footer{
   text-align:center;
   padding:20px;
@@ -171,6 +161,7 @@ footer{
   color:#7c899d;
   letter-spacing:2px;
 }
+
 [hidden]{
   display:none!important;
 }
@@ -186,9 +177,13 @@ footer{
 </header>
 
 <section class="wallet">
+
   <small>共通所持ポイント</small>
+
   <div id="balance">接続中...</div>
+
   <small id="account"></small>
+
   <div>
     <a id="loginLink"
        class="login"
@@ -197,31 +192,45 @@ footer{
       ログイン・新規登録
     </a>
   </div>
+
 </section>
 
 <section>
+
   <h2>🏁 レースカテゴリー</h2>
 
   <div class="categories">
 
     <a class="race boat" href="./index.html">
+
       <div class="emoji">🚤</div>
+
       <div class="name">競艇</div>
+
       <div class="english">BOAT RACE</div>
+
       <div class="enter">入場する ›</div>
+
     </a>
 
     <a class="race horse" href="./horse.html">
+
       <div class="emoji">🏇</div>
+
       <div class="name">競馬</div>
+
       <div class="english">HORSE RACE</div>
+
       <div class="enter">入場する ›</div>
+
     </a>
 
   </div>
+
 </section>
 
 <section>
+
   <h2>🏁 開催レース情報</h2>
 
   <div class="raceInfo">
@@ -233,33 +242,25 @@ footer{
     🏇 競馬
     <div id="horseRace">取得中...</div>
   </div>
+
 </section>
 
 <section>
-  <h2>🏆 総合ポイントランキング</h2>
-  <div id="ranking">接続中...</div>
-</section>
 
-<section>
-  <h2>👤 プレイヤーメニュー</h2>
-
-  <a class="menu" href="./index.html">
-    📋 競艇の投票履歴・ポイント譲渡 ›
-  </a>
-
-  <a class="menu" href="./horse.html#historyArea">
-    📋 競馬の投票履歴 ›
-  </a>
-</section>
-
-<section>
   <h2>📢 運営からのお知らせ</h2>
 
   <div class="notice">
+
     ギャンギャンワールドへようこそ！<br>
+
     競艇・競馬の両方をお楽しみいただけます。<br>
-    ゲーム内ポイント専用・換金不可。
+
+    みんなで楽しくレースを楽しもう！<br><br>
+
+    ※ゲーム内の仮想ポイント専用・換金不可。
+
   </div>
+
 </section>
 
 <footer>
@@ -280,19 +281,20 @@ from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
 import {
   getFirestore,
   doc,
-  collection,
-  onSnapshot,
-  query,
-  orderBy,
-  limit
+  onSnapshot
 }
 from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
 
 const app=initializeApp({
+
   apiKey:"AIzaSyBhYaW-hDQcCL6sc8WNqz5glK1xZOJ-YL8",
+
   authDomain:"gang-gang-world.firebaseapp.com",
+
   projectId:"gang-gang-world",
+
   appId:"1:546523018840:web:8ca419709eff43f0d83c2d"
+
 });
 
 const auth=getAuth(app);
@@ -308,146 +310,132 @@ let stops=[];
 function watchRace(path,target){
 
   const stop=onSnapshot(
+
     doc(db,path,"current"),
+
     snapshot=>{
 
       if(!snapshot.exists()){
+
         el(target).textContent="レース未登録";
+
         return;
+
       }
 
       const r=snapshot.data();
 
       const title=[
+
         r.venue,
+
         r.raceNo ? r.raceNo+"R" : "",
+
         r.name || r.raceName || r.title
+
       ].filter(Boolean).join(" ");
 
       const statuses={
-        open:"投票受付中",
-        closed:"投票締切",
-        finished:"結果確定",
-        ready:"準備中"
+
+        open:"🟢 投票受付中",
+
+        closed:"🔴 投票締切",
+
+        finished:"🏆 結果確定",
+
+        ready:"🟡 準備中"
+
       };
 
       const status=
+
         statuses[r.status] ||
+
         r.status ||
+
         "準備中";
 
       el(target).textContent=
+
         (title||"レース情報")+" ｜ "+status;
 
     },
+
     ()=>{
+
       el(target).textContent=
+
         "レース情報を取得できません";
+
     }
+
   );
 
   stops.push(stop);
+
 }
 
 onAuthStateChanged(auth,user=>{
 
   stops.forEach(stop=>stop());
+
   stops=[];
 
-  el("ranking").replaceChildren();
   el("account").textContent="";
+
   el("balance").textContent="取得中...";
 
   watchRace("races","boatRace");
+
   watchRace("horseRaces","horseRace");
 
   if(!user){
 
     el("balance").textContent="未ログイン";
+
     el("loginLink").hidden=false;
 
-    el("ranking").textContent=
-      "ログインすると表示されます";
-
     return;
+
   }
 
   el("loginLink").hidden=true;
+
   el("account").textContent=
+
     user.email || "ログイン中";
 
   stops.push(onSnapshot(
+
     doc(db,"users",user.uid),
+
     snapshot=>{
 
       if(!snapshot.exists()){
+
         el("balance").textContent="未設定";
+
         return;
+
       }
 
       el("balance").textContent=
+
         fmt(snapshot.data().points)+" pt";
 
     },
+
     ()=>{
+
       el("balance").textContent="取得エラー";
+
     }
-  ));
 
-  const rankingQuery=query(
-    collection(db,"users"),
-    orderBy("points","desc"),
-    limit(20)
-  );
-
-  stops.push(onSnapshot(
-    rankingQuery,
-    snapshot=>{
-
-      const area=el("ranking");
-      area.replaceChildren();
-
-      if(snapshot.empty){
-        area.textContent="参加者なし";
-        return;
-      }
-
-      snapshot.docs.forEach((d,i)=>{
-
-        const data=d.data();
-
-        const row=document.createElement("div");
-        row.className="rank";
-
-        const name=document.createElement("span");
-        const points=document.createElement("strong");
-
-        const medals=["🥇","🥈","🥉"];
-
-        name.textContent=
-          (medals[i]||((i+1)+"位"))+
-          " "+
-          (data.nickname ||
-           data.displayName ||
-           data.name ||
-           "Player "+d.id.slice(0,6));
-
-        points.textContent=fmt(data.points)+" pt";
-
-        row.append(name,points);
-        area.append(row);
-
-      });
-
-    },
-    ()=>{
-      el("ranking").textContent=
-        "ランキングを取得できません";
-    }
   ));
 
 });
 
 </script>
+
 </body>
 </html>

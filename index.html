@@ -5746,5 +5746,206 @@ dialog:has(#rankingList) {
     menu.after(link);
   }
 })();
+</script><script type="module">
+import {
+  getFirestore,
+  doc,
+  onSnapshot,
+  runTransaction,
+  Timestamp
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+import {
+  getAuth
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+const db = getFirestore();
+const auth = getAuth();
+const ref = doc(db,"races","current");
+const adminUID = "w3ZZn1g16fT9wfep9rkMzt7VrPt2";
+const el = id => document.getElementById(id);
+
+let race = {};
+let closing = false;
+let attempted = "";
+
+const panel = document.createElement("div");
+
+panel.style.cssText = `
+  background:#101824;
+  border:2px solid #f5cf65;
+  border-radius:14px;
+  padding:15px;
+  margin:15px 0;
+`;
+
+panel.innerHTML = `
+  <h3>⏰ 自動締切設定</h3>
+  <p>締切日時を選択してください</p>
+  <input id="ggwCloseTime"
+    type="datetime-local">
+  <button id="ggwSetClose">
+    自動締切を設定
+  </button>
+  <button id="ggwCancelClose">
+    自動締切を解除
+  </button>
+  <p id="ggwCloseMessage"></p>
+`;
+
+el("open").before(panel);
+
+const countdown = document.createElement("div");
+
+countdown.style.cssText = `
+  background:#101824;
+  border:1px solid #f5cf65;
+  border-radius:12px;
+  padding:14px;
+  margin:10px 0;
+  font-size:20px;
+  font-weight:bold;
+  color:#f5cf65;
+  text-align:center;
+`;
+
+el("status").after(countdown);
+
+function expired(r){
+  return r.status === "受付中"
+    && r.closeAt?.toMillis()
+    && Date.now() >= r.closeAt.toMillis();
+}
+
+el("ggwSetClose").onclick = async () => {
+  if(auth.currentUser?.uid !== adminUID)return;
+
+  const value = el("ggwCloseTime").value;
+  const time = new Date(value).getTime();
+
+  if(!Number.isFinite(time) || time <= Date.now()){
+    alert("未来の締切日時を設定してください");
+    return;
+  }
+
+  try{
+    await runTransaction(db,async t=>{
+      const r = (await t.get(ref)).data();
+
+      if(!r || !["準備中","受付中"].includes(r.status)){
+        throw Error("準備中または受付中に設定してください");
+      }
+
+      if(expired(r)){
+        throw Error("既に締切時間を過ぎています");
+      }
+
+      t.update(ref,{
+        closeAt:Timestamp.fromMillis(time)
+      });
+    });
+
+    el("ggwCloseMessage").textContent =
+      "自動締切を設定しました！";
+
+  }catch(e){
+    alert(e.message);
+  }
+};
+
+el("ggwCancelClose").onclick = async () => {
+  if(auth.currentUser?.uid !== adminUID)return;
+
+  try{
+    await runTransaction(db,async t=>{
+      const r = (await t.get(ref)).data();
+
+      if(!r || !["準備中","受付中"].includes(r.status) || expired(r)){
+        throw Error("締切設定を解除できません");
+      }
+
+      t.update(ref,{closeAt:null});
+    });
+
+    el("ggwCloseMessage").textContent =
+      "自動締切を解除しました";
+
+  }catch(e){
+    alert(e.message);
+  }
+};
+
+onSnapshot(ref,snapshot=>{
+  race = snapshot.data() || {};
+  tick();
+});
+
+function tick(){
+
+  const end = race.closeAt?.toMillis();
+
+  if(!end || race.status !== "受付中"){
+    countdown.textContent =
+      race.status === "締切"
+      ? "🔴 投票受付終了"
+      : "締切時間：未設定・受付前";
+    return;
+  }
+
+  const remaining = end - Date.now();
+
+  if(remaining <= 0){
+
+    countdown.textContent =
+      "🔴 投票受付終了";
+
+    el("submitTicket").disabled = true;
+
+    const key = race.round + ":" + end;
+
+    if(
+      auth.currentUser?.uid === adminUID &&
+      !closing &&
+      attempted !== key &&
+      !el("close").disabled
+    ){
+      closing = true;
+      attempted = key;
+
+      Promise.resolve(el("close").onclick())
+        .finally(()=>{
+          closing = false;
+        });
+    }
+
+    return;
+  }
+
+  const seconds = Math.ceil(remaining / 1000);
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor(seconds % 3600 / 60);
+  const s = seconds % 60;
+
+  countdown.textContent =
+    "⏳ 締切まで " +
+    [h,m,s].map(n=>
+      String(n).padStart(2,"0")
+    ).join(":");
+}
+
+el("submitTicket").addEventListener(
+  "click",
+  event=>{
+    if(expired(race)){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      alert("投票受付は終了しました");
+    }
+  },
+  true
+);
+
+setInterval(tick,500);
+
 </script></body>
 </html>

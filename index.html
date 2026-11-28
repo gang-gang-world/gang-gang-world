@@ -5947,5 +5947,216 @@ el("submitTicket").addEventListener(
 
 setInterval(tick,500);
 
+</script><script type="module">
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  onSnapshot,
+  runTransaction,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+const auth = getAuth();
+const db = getFirestore();
+
+const rewards = [
+  10000,
+  15000,
+  20000,
+  25000,
+  30000,
+  50000,
+  100000
+];
+
+const panel = document.createElement("div");
+
+panel.style.cssText = `
+  margin:15px 0;
+  padding:15px;
+  border:1px solid #f5cf65;
+  border-radius:15px;
+  background:#111827;
+  text-align:center;
+`;
+
+panel.innerHTML = `
+  <h2>🎁 ログインボーナス</h2>
+  <p>7日間連続ログインで豪華報酬！</p>
+  <div id="bonusGrid" style="
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:6px;
+  "></div>
+  <p id="bonusStatus">確認中...</p>
+  <button id="claimBonus" disabled style="
+    width:100%;
+    background:linear-gradient(135deg,#ffe49a,#c89b36);
+    color:#111827;
+    font-size:16px;
+    padding:14px;
+  ">ボーナスを受け取る</button>
+  <small>毎日午前0時更新・日本時間</small>
+`;
+
+document.getElementById("points").after(panel);
+
+const grid = document.getElementById("bonusGrid");
+const status = document.getElementById("bonusStatus");
+const button = document.getElementById("claimBonus");
+
+let data = null;
+let stop = null;
+let claiming = false;
+
+function dayNumber(date) {
+  return Math.floor(
+    (date.getTime() + 32400000) / 86400000
+  );
+}
+
+function bonusInfo(d) {
+  const today = dayNumber(new Date());
+
+  const last = d.bonusAt
+    ? dayNumber(d.bonusAt.toDate())
+    : -1;
+
+  const previous = d.bonusStep || 0;
+
+  return {
+    claimed: last >= today,
+    step: last === today
+      ? previous
+      : last === today - 1
+        ? previous % 7 + 1
+        : 1
+  };
+}
+
+function renderBonus() {
+  if (!data) {
+    button.disabled = true;
+    return;
+  }
+
+  const info = bonusInfo(data);
+
+  grid.replaceChildren();
+
+  rewards.forEach((reward,i) => {
+    const box = document.createElement("div");
+    const active = i + 1 === info.step;
+
+    box.style.cssText = `
+      padding:10px 3px;
+      border-radius:10px;
+      border:1px solid ${active ? "#f5cf65" : "#354052"};
+      background:${active ? "#40351e" : "#202b3c"};
+      color:#f5cf65;
+      font-size:12px;
+      ${i === 6 ? "grid-column:1/-1;" : ""}
+    `;
+
+    box.innerHTML = `
+      DAY ${i+1}<br>
+      ${i === 6 ? "🏆" : "🎁"}<br>
+      <strong>${reward.toLocaleString()} pt</strong>
+      ${info.claimed && active ? "<br>受取済み" : ""}
+    `;
+
+    grid.append(box);
+  });
+
+  button.disabled = info.claimed || claiming;
+
+  status.textContent = info.claimed
+    ? "本日のボーナスは受取済み！"
+    : "連続ログイン " + info.step + " 日目";
+
+  button.textContent = info.claimed
+    ? "明日また受け取ってね！"
+    : rewards[info.step-1].toLocaleString()
+      + " pt を受け取る";
+}
+
+onAuthStateChanged(auth,user => {
+  if(stop) stop();
+
+  data = null;
+  button.disabled = true;
+  grid.replaceChildren();
+  status.textContent = "確認中...";
+
+  if(!user) return;
+
+  stop = onSnapshot(
+    doc(db,"users",user.uid),
+    snap => {
+      data = snap.data() || null;
+      renderBonus();
+    },
+    e => {
+      status.textContent = e.message;
+    }
+  );
+});
+
+button.onclick = async () => {
+  const user = auth.currentUser;
+
+  if(!user || claiming) return;
+
+  claiming = true;
+  button.disabled = true;
+
+  try {
+    const ref = doc(db,"users",user.uid);
+
+    const reward = await runTransaction(db,async t => {
+      const snap = await t.get(ref);
+
+      if(!snap.exists()) {
+        throw Error("ポイント取得中です");
+      }
+
+      const d = snap.data();
+      const info = bonusInfo(d);
+
+      if(info.claimed) {
+        throw Error("本日は受取済みです");
+      }
+
+      const amount = rewards[info.step-1];
+
+      t.update(ref,{
+        points: d.points + amount,
+        bonusAt: serverTimestamp(),
+        bonusStep: info.step
+      });
+
+      return amount;
+    });
+
+    alert(
+      "🎉 " + reward.toLocaleString()
+      + "ポイント獲得！"
+    );
+
+  } catch(e) {
+    alert("受け取り失敗：" + e.message);
+  } finally {
+    claiming = false;
+    renderBonus();
+  }
+};
+
+setInterval(renderBonus,30000);
+
 </script></body>
 </html>

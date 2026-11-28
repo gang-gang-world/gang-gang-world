@@ -5671,5 +5671,48 @@ dialog:has(#rankingList) {
   background: #101824;
 }
 </style>
-</body>
+<style>
+.ggw-switch{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:12px 0 18px;
+}
+.ggw-switch a{
+  display:block;
+  padding:16px 8px;
+  border:1px solid #c9a34e;
+  border-radius:14px;
+  text-align:center;
+  color:white;
+  text-decoration:none;
+  font-size:18px;
+  font-weight:900;
+  box-shadow:0 4px 15px #0005;
+}
+.ggw-switch .boat-link{
+  background:linear-gradient(135deg,#183653,#102033);
+}
+.ggw-switch .horse-link{
+  background:linear-gradient(135deg,#20583e,#102d20);
+}
+.ggw-switch small{
+  display:block;
+  font-size:10px;
+  color:#f5cf65;
+  margin-top:5px;
+  letter-spacing:2px;
+}
+</style>
+
+<div class="ggw-switch">
+  <a class="boat-link" href="./index.html">
+    🚤 競艇
+    <small>BOAT RACE</small>
+  </a>
+  <a class="horse-link" href="./horse.html">
+    🏇 競馬
+    <small>HORSE RACE</small>
+  </a>
+</div></body>
 </html>

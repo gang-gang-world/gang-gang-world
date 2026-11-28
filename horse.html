@@ -2363,5 +2363,420 @@ html{
   }
 
 })();
+</script><style>
+body{
+  background:#0b1018!important;
+  padding:15px 12px 120px!important;
+}
+
+.ggw-page-off{
+  display:none!important;
+}
+
+#horseNav{
+  position:fixed!important;
+  bottom:calc(12px + env(safe-area-inset-bottom))!important;
+  left:12px!important;
+  right:12px!important;
+  max-width:626px;
+  margin:auto;
+  padding:8px!important;
+  border:1px solid #c9a34e!important;
+  border-radius:16px!important;
+  background:#121a27!important;
+  z-index:99999!important;
+}
+
+#horseNav button{
+  flex:1;
+  font-size:12px!important;
+  min-height:52px;
+  border-radius:10px;
+  color:#f5cf65!important;
+  white-space:pre-line;
+  line-height:1.5;
+}
+
+#horseNav button.active{
+  background:#303b4d!important;
+}
+
+#balance{
+  background:#0b1018;
+  border:1px solid #c9a34e;
+  border-radius:14px;
+  padding:25px 5px;
+  font-size:clamp(25px,8vw,42px)!important;
+  text-align:center!important;
+  font-weight:900;
+  margin:15px 0!important;
+}
+
+#ggwHorseHome{
+  border:2px solid #c9a34e;
+  border-radius:18px;
+  padding:18px;
+  text-align:center!important;
+  background:linear-gradient(
+    135deg,#222936,#131923
+  )!important;
+}
+
+#ggwHorseHome p{
+  text-align:center!important;
+}
+
+#account{
+  color:#f5cf65;
+  font-weight:bold;
+}
+
+#admin{
+  border:2px solid #c9a34e!important;
+}
+
+.ggw-admin-group{
+  margin:12px 0!important;
+  border-radius:12px!important;
+  background:#202b3c!important;
+}
+
+.ggw-admin-group summary{
+  padding:16px!important;
+  color:#f5cf65!important;
+  font-weight:bold;
+}
+
+.picks{
+  display:grid!important;
+  grid-template-columns:repeat(6,1fr);
+  gap:6px;
+}
+
+.picks label{
+  min-height:45px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  font-weight:bold;
+  position:relative;
+  cursor:pointer;
+}
+
+.picks input{
+  position:absolute;
+  opacity:0;
+  width:100%!important;
+  height:100%;
+  margin:0;
+}
+
+.picks label:has(input:checked){
+  background:#f5cf65!important;
+  color:#111827!important;
+  border-color:#ffe49a;
+}
+
+#ggwNoHorses{
+  background:#101722;
+  color:#f5cf65;
+  border:1px solid #8a713d;
+  border-radius:10px;
+  padding:14px;
+  margin:10px 0;
+}
+
+.ggw-race-details{
+  background:#171e2c;
+  border:1px solid #405068;
+  border-radius:14px;
+  margin:12px 0;
+  overflow:hidden;
+}
+
+.ggw-race-details > summary{
+  padding:16px;
+  color:#f5cf65;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.ggw-race-details > section{
+  margin:0!important;
+  border:none!important;
+  box-shadow:none!important;
+}
+</style>
+
+<script>
+(function(){
+
+  function setup(){
+
+    const el=id=>
+      document.getElementById(id);
+
+    const home=el("balance")
+      ?.closest("section");
+
+    const race=el("horses")
+      ?.closest("section");
+
+    const play=el("play");
+
+    const odds=el("odds")
+      ?.closest("section");
+
+    const history=el("historyArea");
+
+    const ranking=el("rankingArea");
+
+    const admin=el("admin");
+
+    const nav=document.querySelector("nav");
+
+    if(!home||!race||!play||
+       !odds||!history||!ranking||
+       !admin||!nav)return;
+
+    if(nav.dataset.finalReady==="true")
+      return;
+
+    nav.dataset.finalReady="true";
+
+    home.id="ggwHorseHome";
+
+    nav.id="horseNav";
+
+    const menu=document.querySelector(
+      ".ggw-switch"
+    );
+
+    const homeLink=el("ggwHomeLink");
+
+    if(menu){
+      home.after(menu);
+    }
+
+    if(homeLink){
+      if(menu){
+        menu.after(homeLink);
+      }else{
+        home.after(homeLink);
+      }
+    }
+
+    function fold(node,title){
+
+      const details=
+        document.createElement("details");
+
+      details.className=
+        "ggw-race-details";
+
+      const summary=
+        document.createElement("summary");
+
+      summary.textContent=title;
+
+      node.before(details);
+
+      details.append(summary,node);
+
+      return details;
+
+    }
+
+    const oddsBox=fold(
+      odds,
+      "📊 オッズ一覧・高い順・低い順"
+    );
+
+    const historyBox=fold(
+      history,
+      "📋 投票履歴・収支確認"
+    );
+
+    const notice=
+      document.createElement("div");
+
+    notice.id="ggwNoHorses";
+
+    notice.textContent=
+      "出走馬が未登録です。レース登録後に馬番号が表示されます。";
+
+    el("choices").before(notice);
+
+    function updateHorses(){
+
+      const count=
+        el("horses").children.length;
+
+      notice.hidden=count>0;
+
+      el("choices").classList.toggle(
+        "ggw-page-off",
+        count===0
+      );
+
+    }
+
+    new MutationObserver(updateHorses)
+    .observe(el("horses"),{
+      childList:true,
+      subtree:true
+    });
+
+    updateHorses();
+
+    const pages={
+
+      home:[
+        home,
+        menu,
+        homeLink
+      ],
+
+      race:[
+        race,
+        play,
+        oddsBox,
+        historyBox
+      ],
+
+      admin:[
+        admin
+      ],
+
+      ranking:[
+        ranking
+      ]
+
+    };
+
+    let current="home";
+
+    const buttons={};
+
+    function showPage(name){
+
+      if(name==="admin"&&admin.hidden)
+        return;
+
+      if(name==="ranking"&&ranking.hidden)
+        return;
+
+      current=name;
+
+      Object.entries(pages)
+      .forEach(([key,nodes])=>{
+
+        nodes.filter(Boolean)
+        .forEach(node=>{
+
+          node.classList.toggle(
+            "ggw-page-off",
+            key!==name
+          );
+
+        });
+
+      });
+
+      Object.entries(buttons)
+      .forEach(([key,button])=>{
+
+        button.classList.toggle(
+          "active",
+          key===name
+        );
+
+      });
+
+      window.scrollTo({
+        top:0,
+        behavior:"instant"
+      });
+
+    }
+
+    nav.replaceChildren();
+
+    function add(key,text){
+
+      const button=
+        document.createElement("button");
+
+      button.type="button";
+
+      button.textContent=text;
+
+      button.onclick=()=>showPage(key);
+
+      buttons[key]=button;
+
+      nav.append(button);
+
+    }
+
+    add("home","🏠\nホーム");
+
+    add("race","🏇\nレース");
+
+    add("admin","⚙️\n管理");
+
+    add("ranking","🏆\nランキング");
+
+    function syncAccess(){
+
+      buttons.admin.hidden=admin.hidden;
+
+      buttons.ranking.hidden=ranking.hidden;
+
+      historyBox.hidden=history.hidden;
+
+      if(
+        (current==="admin"&&admin.hidden)||
+        (current==="ranking"&&ranking.hidden)
+      ){
+        showPage("home");
+      }
+
+    }
+
+    const observer=
+      new MutationObserver(syncAccess);
+
+    [admin,ranking,history]
+    .forEach(node=>{
+
+      observer.observe(node,{
+        attributes:true,
+        attributeFilter:["hidden"]
+      });
+
+    });
+
+    syncAccess();
+
+    showPage("home");
+
+  }
+
+  if(document.readyState==="loading"){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      setup
+    );
+
+  }else{
+
+    setup();
+
+  }
+
+})();
 </script></body>
 </html>

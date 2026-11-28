@@ -1032,5 +1032,641 @@ drawChoices();
     menu.after(link);
   }
 })();
+</script><style>
+.h-race-group{
+  background:#101722;
+  border:1px solid #c9a34e;
+  border-radius:14px;
+  padding:12px;
+  margin:14px 0;
+}
+.h-race-title{
+  color:#f5cf65;
+  font-size:17px;
+  font-weight:bold;
+  margin-bottom:12px;
+  overflow-wrap:anywhere;
+}
+.h-summary{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:5px;
+  margin-bottom:12px;
+}
+.h-summary div{
+  background:#263449;
+  border-radius:8px;
+  padding:10px 3px;
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+.h-summary small{
+  display:block;
+  font-size:11px;
+  margin-bottom:6px;
+}
+.h-summary strong{
+  font-size:13px;
+}
+.h-ticket{
+  background:#192332;
+  border:1px solid #354052;
+  border-radius:10px;
+  padding:12px;
+  margin:8px 0;
+  line-height:1.8;
+  overflow-wrap:anywhere;
+}
+.h-ticket-head{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  font-weight:bold;
+}
+.h-win{color:#69dfa0}
+.h-lose{color:#ff8585}
+.h-wait{color:#f5cf65}
+</style>
+
+<script type="module">
+
+import {
+  getApp
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
+
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  onSnapshot,
+  doc
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+const app=getApp();
+const db=getFirestore(app);
+const auth=getAuth(app);
+
+const ADMIN="w3ZZn1g16fT9wfep9rkMzt7VrPt2";
+
+const el=id=>document.getElementById(id);
+
+const fmt=n=>Number(n||0)
+.toLocaleString("ja-JP");
+
+let currentRace={};
+let myTickets=[];
+let adminTickets=[];
+let profiles={};
+let stops=[];
+
+function make(tag,cls,text){
+
+  const node=document.createElement(tag);
+
+  if(cls)node.className=cls;
+
+  if(text!==undefined)
+    node.textContent=text;
+
+  return node;
+}
+
+const historyView=make("div");
+
+historyView.id="horseHistoryV2";
+
+el("history").after(historyView);
+el("history").style.display="none";
+
+const historyFilter=make("select");
+
+[
+ ["all","すべての投票"],
+ ["win","的中のみ"],
+ ["lose","不的中のみ"],
+ ["wait","結果待ち"]
+
+].forEach(([value,text])=>{
+
+  const option=make("option","",text);
+
+  option.value=value;
+
+  historyFilter.append(option);
+
+});
+
+historyView.before(historyFilter);
+
+function sumBox(label,value,cls){
+
+  const box=make("div");
+
+  box.append(
+    make("small","",label),
+    make("strong",cls,value)
+  );
+
+  return box;
+}
+
+function summary(tickets){
+
+  const purchased=tickets.reduce(
+    (sum,t)=>sum+Number(t.stake||0),0
+  );
+
+  const settled=tickets.filter(t=>t.settled);
+
+  const paid=settled.reduce(
+    (sum,t)=>sum+Number(t.payout||0),0
+  );
+
+  const settledStake=settled.reduce(
+    (sum,t)=>sum+Number(t.stake||0),0
+  );
+
+  const profit=paid-settledStake;
+
+  const row=make("div","h-summary");
+
+  row.append(
+
+    sumBox(
+      "購入合計",
+      fmt(purchased)+" pt"
+    ),
+
+    sumBox(
+      "払戻合計",
+      fmt(paid)+" pt"
+    ),
+
+    sumBox(
+      "確定収支",
+      (profit>0?"+":"")+fmt(profit)+" pt",
+      profit>0?"h-win":profit<0?"h-lose":""
+    )
+
+  );
+
+  return row;
+}
+
+function groupsOf(tickets){
+
+  const groups=new Map();
+
+  tickets.forEach(t=>{
+
+    const key=t.round||"不明";
+
+    if(!groups.has(key))
+      groups.set(key,[]);
+
+    groups.get(key).push(t);
+
+  });
+
+  return [...groups.entries()].sort(
+    (a,b)=>
+    Number(b[0]===currentRace.round)-
+    Number(a[0]===currentRace.round)
+  );
+}
+
+function raceTitle(round){
+
+  if(round===currentRace.round){
+
+    return [
+      currentRace.venue,
+      currentRace.name
+    ].filter(Boolean).join(" ")
+    ||"現在のレース";
+
+  }
+
+  return "過去レース："+round;
+}
+
+function statusOf(t){
+
+  if(!t.settled)return "wait";
+
+  return Number(t.payout||0)>0
+    ?"win":"lose";
+}
+
+function ticketCard(t,admin){
+
+  const card=make("div","h-ticket");
+  const head=make("div","h-ticket-head");
+
+  const state=statusOf(t);
+
+  const names={
+    win:"🎯 的中",
+    lose:"不的中",
+    wait:"結果待ち"
+  };
+
+  head.append(
+
+    make(
+      "span","",
+      t.type+" "+t.key
+    ),
+
+    make(
+      "span",
+      "h-"+state,
+      names[state]
+    )
+
+  );
+
+  card.append(head);
+
+  if(admin){
+
+    card.append(make(
+      "div","",
+      "購入者："+(
+        profiles[t.uid]||
+        t.uid||
+        "不明"
+      )
+    ));
+
+  }
+
+  card.append(
+
+    make(
+      "div","",
+      "購入："+fmt(t.stake)+" pt"
+    ),
+
+    make(
+      "div","",
+      "オッズ："+(t.odds??"不明")+" 倍"
+    ),
+
+    make(
+      "div","",
+      t.settled
+      ?"払戻："+fmt(t.payout)+" pt"
+      :"払戻未確定"
+    )
+
+  );
+
+  return card;
+}
+
+function renderHistory(){
+
+  historyView.replaceChildren();
+
+  if(!myTickets.length){
+
+    historyView.textContent="投票履歴なし";
+
+    return;
+
+  }
+
+  const selected=historyFilter.value;
+
+  groupsOf(myTickets).forEach(
+    ([round,tickets])=>{
+
+      const filtered=tickets.filter(t=>
+        selected==="all"||
+        statusOf(t)===selected
+      );
+
+      if(!filtered.length)return;
+
+      const group=make(
+        "div","h-race-group"
+      );
+
+      group.append(
+
+        make(
+          "div",
+          "h-race-title",
+          "🏇 "+raceTitle(round)
+        ),
+
+        summary(tickets)
+
+      );
+
+      filtered.forEach(t=>
+        group.append(ticketCard(t,false))
+      );
+
+      historyView.append(group);
+
+    }
+  );
+
+  if(!historyView.children.length)
+    historyView.textContent="該当する履歴なし";
+}
+
+historyFilter.onchange=renderHistory;
+
+const adminSection=el("admin");
+
+const auditPanel=make(
+  "div","h-race-group"
+);
+
+auditPanel.append(make(
+  "h3","","📊 レース別投票集計"
+));
+
+const auditButton=make(
+  "button","","最新の集計を取得"
+);
+
+auditButton.type="button";
+
+const auditFilter=make("select");
+
+[
+ ["all","すべてのレース"],
+ ["current","現在のレースのみ"]
+
+].forEach(([value,text])=>{
+
+  const option=make("option","",text);
+
+  option.value=value;
+
+  auditFilter.append(option);
+
+});
+
+const auditOutput=make("div");
+
+auditPanel.append(
+  auditButton,
+  auditFilter,
+  auditOutput
+);
+
+adminSection.append(auditPanel);
+
+function renderAudit(){
+
+  auditOutput.replaceChildren();
+
+  if(auth.currentUser?.uid!==ADMIN)
+    return;
+
+  const list=adminTickets.filter(t=>
+    auditFilter.value==="all"||
+    t.round===currentRace.round
+  );
+
+  if(!list.length){
+
+    auditOutput.textContent="投票データなし";
+
+    return;
+
+  }
+
+  groupsOf(list).forEach(
+    ([round,tickets])=>{
+
+      const group=make(
+        "div","h-race-group"
+      );
+
+      group.append(
+
+        make(
+          "div",
+          "h-race-title",
+          "🏇 "+raceTitle(round)
+        ),
+
+        summary(tickets)
+
+      );
+
+      const players=new Map();
+      const bets=new Map();
+
+      tickets.forEach(t=>{
+
+        if(!players.has(t.uid))
+          players.set(t.uid,[]);
+
+        players.get(t.uid).push(t);
+
+        const key=t.type+" "+t.key;
+
+        bets.set(
+          key,
+          (bets.get(key)||0)+
+          Number(t.stake||0)
+        );
+
+      });
+
+      group.append(make(
+        "h3","",
+        "参加者："+players.size+"人"
+      ));
+
+      [...players.entries()].forEach(
+        ([uid,items])=>{
+
+          const details=make(
+            "details","h-ticket"
+          );
+
+          const title=make(
+            "summary","",
+            (profiles[uid]||uid)+
+            " ｜ "+items.length+"点"
+          );
+
+          details.append(
+            title,
+            summary(items)
+          );
+
+          items.forEach(t=>
+            details.append(ticketCard(t,false))
+          );
+
+          group.append(details);
+
+        }
+      );
+
+      const betDetails=make(
+        "details","h-ticket"
+      );
+
+      betDetails.append(make(
+        "summary","","買い目別の購入集計"
+      ));
+
+      [...bets.entries()]
+      .sort((a,b)=>b[1]-a[1])
+      .forEach(([key,value])=>{
+
+        betDetails.append(make(
+          "div",
+          "h-ticket",
+          key+" ｜ "+fmt(value)+" pt"
+        ));
+
+      });
+
+      group.append(betDetails);
+
+      auditOutput.append(group);
+
+    }
+  );
+
+}
+
+auditFilter.onchange=renderAudit;
+
+auditButton.onclick=async()=>{
+
+  if(auth.currentUser?.uid!==ADMIN)
+    return;
+
+  auditButton.disabled=true;
+
+  auditOutput.textContent="取得中...";
+
+  try{
+
+    const snapshot=await getDocs(
+      collection(db,"horseTickets")
+    );
+
+    if(auth.currentUser?.uid!==ADMIN)
+      return;
+
+    adminTickets=snapshot.docs.map(
+      d=>d.data()
+    );
+
+    renderAudit();
+
+  }catch(e){
+
+    auditOutput.textContent=
+      "取得エラー："+e.message;
+
+  }finally{
+
+    auditButton.disabled=false;
+
+  }
+
+};
+
+onAuthStateChanged(auth,user=>{
+
+  stops.forEach(stop=>stop());
+  stops=[];
+
+  myTickets=[];
+  adminTickets=[];
+  profiles={};
+
+  historyView.replaceChildren();
+  auditOutput.replaceChildren();
+
+  if(!user)return;
+
+  stops.push(onSnapshot(
+
+    doc(db,"horseRaces","current"),
+
+    s=>{
+
+      currentRace=s.data()||{};
+
+      renderHistory();
+      renderAudit();
+
+    }
+
+  ));
+
+  stops.push(onSnapshot(
+
+    query(
+      collection(db,"horseTickets"),
+      where("uid","==",user.uid)
+    ),
+
+    s=>{
+
+      myTickets=s.docs.map(d=>d.data());
+
+      renderHistory();
+
+    },
+
+    e=>{
+
+      historyView.textContent=
+        "履歴取得エラー："+e.message;
+
+    }
+
+  ));
+
+  if(user.uid===ADMIN){
+
+    stops.push(onSnapshot(
+
+      collection(db,"profiles"),
+
+      s=>{
+
+        profiles=Object.fromEntries(
+
+          s.docs.map(d=>[
+            d.id,
+            d.data().nickname
+          ])
+
+        );
+
+        renderAudit();
+
+      }
+
+    ));
+
+  }
+
+});
+
 </script></body>
 </html>

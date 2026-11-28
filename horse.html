@@ -3073,5 +3073,507 @@ if(document.readyState==="loading"){
 }
 
 })();
+</script><style>
+#horseOddsManager{
+ background:#101722;
+ border:1px solid #c9a34e;
+ border-radius:12px;
+ padding:14px;
+ margin:12px 0;
+ text-align:left;
+}
+
+#horseOddsManager h3{
+ color:#f5cf65;
+ text-align:center;
+}
+
+#horseOddsManager label{
+ display:block;
+ margin:10px 0 4px;
+}
+
+#horseOddsManager button{
+ min-height:45px;
+}
+
+#horseOddsManager select,
+#horseOddsManager input{
+ width:100%;
+}
+
+#horseOddsMessage{
+ color:#f5cf65;
+ padding:10px;
+ overflow-wrap:anywhere;
+}
+</style>
+
+<script type="module">
+
+import {
+ getApp
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
+
+import {
+ getAuth
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+import {
+ getFirestore,
+ doc,
+ onSnapshot,
+ runTransaction
+} from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+const app=getApp();
+const auth=getAuth(app);
+const db=getFirestore(app);
+
+const ADMIN="w3ZZn1g16fT9wfep9rkMzt7VrPt2";
+
+const raceRef=doc(db,"horseRaces","current");
+
+const el=id=>document.getElementById(id);
+
+const panel=document.createElement("div");
+
+panel.id="horseOddsManager";
+
+panel.innerHTML=`
+<h3>📊 オッズ管理</h3>
+
+<label>投票方式</label>
+
+<select id="horseManageType">
+<option>単勝</option>
+<option>複勝</option>
+<option>馬連</option>
+<option>馬単</option>
+<option>ワイド</option>
+<option>3連複</option>
+<option>3連単</option>
+</select>
+
+<label>一括設定する倍率</label>
+
+<input id="horseBulkValue"
+type="number"
+min="1"
+max="100000"
+step="0.1"
+value="10">
+
+<button id="horseBulkSet">
+選択した投票方式を一括設定
+</button>
+
+<button id="horseBulkAll">
+全投票方式を一括設定
+</button>
+
+<h3>🎲 オッズ自動生成</h3>
+
+<label>最低オッズ</label>
+
+<input id="horseAutoMin"
+type="number"
+min="1"
+step="0.1"
+value="2">
+
+<label>最高オッズ</label>
+
+<input id="horseAutoMax"
+type="number"
+min="1"
+step="0.1"
+value="100">
+
+<button id="horseAutoSet">
+選択した投票方式を自動生成
+</button>
+
+<button id="horseAutoAll">
+全投票方式を自動生成
+</button>
+
+<h3>✏️ 個別オッズ変更</h3>
+
+<label>買い目を選択</label>
+
+<select id="horseManageKey"></select>
+
+<p id="horseCurrentOdd">
+現在のオッズ：未設定
+</p>
+
+<input id="horseNewOdd"
+type="number"
+min="1"
+max="100000"
+step="0.1"
+placeholder="変更後の倍率">
+
+<button id="horseIndividualSet">
+個別オッズを変更
+</button>
+
+<p id="horseOddsMessage"></p>
+`;
+
+const oldButton=el("changeOdds");
+
+if(oldButton){
+
+ oldButton.after(panel);
+
+ oldButton.hidden=true;
+
+ ["editType","editKey","editOdds"]
+ .forEach(id=>{
+
+  const node=el(id);
+
+  if(node)node.hidden=true;
+
+ });
+
+}else{
+
+ el("admin").append(panel);
+
+}
+
+let currentRace={};
+let busy=false;
+
+function updateCurrent(){
+
+ const type=el("horseManageType").value;
+
+ const key=el("horseManageKey").value;
+
+ const odd=currentRace.odds?.[type]?.[key];
+
+ el("horseCurrentOdd").textContent=
+ "現在のオッズ："+(odd??"未設定")+" 倍";
+
+}
+
+function refreshKeys(){
+
+ const type=el("horseManageType").value;
+
+ const select=el("horseManageKey");
+
+ const previous=select.value;
+
+ select.replaceChildren();
+
+ const keys=Object.keys(
+ currentRace.odds?.[type]||{}
+ );
+
+ if(!keys.length){
+
+  select.add(
+   new Option("先に出走表を登録してください","")
+  );
+
+ }
+
+ keys.forEach(key=>{
+
+  select.add(new Option(key,key));
+
+ });
+
+ if(keys.includes(previous)){
+
+  select.value=previous;
+
+ }
+
+ updateCurrent();
+
+}
+
+onSnapshot(raceRef,snapshot=>{
+
+ currentRace=snapshot.data()||{};
+
+ refreshKeys();
+
+},error=>{
+
+ el("horseOddsMessage").textContent=
+ error.message;
+
+});
+
+el("horseManageType").onchange=refreshKeys;
+
+el("horseManageKey").onchange=updateCurrent;
+
+function validOdds(value){
+
+ return Number.isFinite(value)
+ &&value>=1
+ &&value<=100000;
+
+}
+
+async function changeOdds(fn){
+
+ if(auth.currentUser?.uid!==ADMIN){
+
+  throw Error("管理者専用です");
+
+ }
+
+ await runTransaction(db,async t=>{
+
+  const snapshot=await t.get(raceRef);
+
+  const race=snapshot.data();
+
+  if(!race||race.status!=="準備中"){
+
+   throw Error(
+    "オッズ変更はレース準備中のみ可能です"
+   );
+
+  }
+
+  if(!race.odds||
+   !Object.keys(race.odds).length){
+
+   throw Error(
+    "先に出走表を登録してください"
+   );
+
+  }
+
+  const odds=structuredClone(race.odds);
+
+  fn(odds);
+
+  t.update(raceRef,{odds});
+
+ });
+
+}
+
+function action(id,fn){
+
+ el(id).onclick=async()=>{
+
+  if(busy)return;
+
+  busy=true;
+
+  el(id).disabled=true;
+
+  el("horseOddsMessage").textContent=
+  "更新中...";
+
+  try{
+
+   await fn();
+
+   el("horseOddsMessage").textContent=
+   "✅ オッズ更新完了！";
+
+  }catch(e){
+
+   el("horseOddsMessage").textContent=
+   "エラー："+e.message;
+
+  }finally{
+
+   busy=false;
+
+   el(id).disabled=false;
+
+  }
+
+ };
+
+}
+
+action("horseBulkSet",async()=>{
+
+ const type=el("horseManageType").value;
+
+ const value=Number(
+ el("horseBulkValue").value
+ );
+
+ if(!validOdds(value)){
+
+  throw Error("倍率を確認してください");
+
+ }
+
+ await changeOdds(odds=>{
+
+  Object.keys(odds[type]||{})
+  .forEach(key=>{
+
+   odds[type][key]=value;
+
+  });
+
+ });
+
+});
+
+action("horseBulkAll",async()=>{
+
+ const value=Number(
+ el("horseBulkValue").value
+ );
+
+ if(!validOdds(value)){
+
+  throw Error("倍率を確認してください");
+
+ }
+
+ if(!confirm(
+ "全投票方式を"+value+"倍に設定しますか？"
+ )){
+
+  throw Error("キャンセルしました");
+
+ }
+
+ await changeOdds(odds=>{
+
+  Object.keys(odds).forEach(type=>{
+
+   Object.keys(odds[type])
+   .forEach(key=>{
+
+    odds[type][key]=value;
+
+   });
+
+  });
+
+ });
+
+});
+
+function randomOdd(min,max){
+
+ return Math.round(
+ (min+Math.random()*(max-min))*10
+ )/10;
+
+}
+
+function autoRange(){
+
+ const min=Number(
+ el("horseAutoMin").value
+ );
+
+ const max=Number(
+ el("horseAutoMax").value
+ );
+
+ if(!validOdds(min)||
+ !validOdds(max)||max<min){
+
+  throw Error(
+   "最低・最高オッズを確認してください"
+  );
+
+ }
+
+ return {min,max};
+
+}
+
+action("horseAutoSet",async()=>{
+
+ const {min,max}=autoRange();
+
+ const type=el("horseManageType").value;
+
+ await changeOdds(odds=>{
+
+  Object.keys(odds[type]||{})
+  .forEach(key=>{
+
+   odds[type][key]=randomOdd(min,max);
+
+  });
+
+ });
+
+});
+
+action("horseAutoAll",async()=>{
+
+ const {min,max}=autoRange();
+
+ if(!confirm(
+ "全投票方式のオッズを自動生成しますか？"
+ )){
+
+  throw Error("キャンセルしました");
+
+ }
+
+ await changeOdds(odds=>{
+
+  Object.keys(odds).forEach(type=>{
+
+   Object.keys(odds[type])
+   .forEach(key=>{
+
+    odds[type][key]=randomOdd(min,max);
+
+   });
+
+  });
+
+ });
+
+});
+
+action("horseIndividualSet",async()=>{
+
+ const type=el("horseManageType").value;
+
+ const key=el("horseManageKey").value;
+
+ const value=Number(
+ el("horseNewOdd").value
+ );
+
+ if(!validOdds(value)||!key){
+
+  throw Error("買い目と倍率を確認してください");
+
+ }
+
+ await changeOdds(odds=>{
+
+  if(!Object.hasOwn(odds[type]||{},key)){
+
+   throw Error("買い目が存在しません");
+
+  }
+
+  odds[type][key]=value;
+
+ });
+
+});
+
 </script></body>
 </html>

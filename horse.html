@@ -3575,5 +3575,55 @@ action("horseIndividualSet",async()=>{
 
 });
 
-</script></body>
+</script>
+<script type="module">
+const admin = document.getElementById("admin");
+
+function fixOddsPanel() {
+  const panel = document.getElementById("horseOddsManager");
+
+  const groups = [...admin.querySelectorAll(".ggw-admin-group")];
+
+  const group = groups.find(node =>
+    node.querySelector("summary")?.textContent.includes("オッズ")
+  );
+
+  if (!panel || !group) return false;
+
+  const content = group.querySelector(".ggw-admin-content");
+
+  if (!content) return false;
+
+  group.querySelector("summary").textContent = "📊 オッズ管理";
+
+  content.append(panel);
+
+  panel.style.border = "none";
+  panel.style.padding = "0";
+  panel.style.margin = "0";
+  panel.style.background = "transparent";
+
+  const heading = panel.querySelector("h3");
+
+  if (heading) heading.hidden = true;
+
+  groups.forEach(node => {
+    node.open = false;
+  });
+
+  return true;
+}
+
+if (!fixOddsPanel()) {
+  const observer = new MutationObserver(() => {
+    if (fixOddsPanel()) observer.disconnect();
+  });
+
+  observer.observe(admin, {
+    childList: true,
+    subtree: true
+  });
+}
+</script>
+</body>
 </html>
